@@ -975,14 +975,14 @@
   },
   {
     "idx": 1,
-    "slug": "Workflows / ai-lead-qualification",
-    "nodesCount": "18 NODES",
+    "slug": "Workflows / enterprise-rag-support",
+    "nodesCount": "11 NODES",
     "badge": "ACTIVE IN N8N",
-    "title": "AI INBOUND LEAD QUALIFICATION & ENRICHMENT ENGINE",
-    "img": "images/workflow-lead-qualification.png?v=2",
-    "desc": "Whenever someone fills out a contact form on your website, this system instantly visits their company website, gathers background information, and uses AI to see if they are an ideal client. It automatically sorts leads into Hot, Warm, or Cold, saves their profile into Google Sheets, and sends an urgent notification to your sales team.",
-    "howItWorks": "Whenever someone fills out a contact form on your website, this system instantly visits their company website, gathers background information, and uses AI to see if they are an ideal client. It automatically sorts leads into Hot, Warm, or Cold, saves their profile into Google Sheets, and sends an urgent notification to your sales team.",
-    "problemSolved": "Stops good business leads from slipping away. Sales reps no longer have to spend 20 minutes manually researching every company that contacts them—hot leads get contacted within minutes instead of hours."
+    "title": "ENTERPRISE RAG KNOWLEDGE PIPELINE & SUPPORT CHATBOT",
+    "img": "images/workflow-rag-chatbot.png?v=2",
+    "desc": "An intelligent 24/7 assistant that reads your company's Google Docs and product guides. When a customer or team member asks a question, the AI finds the exact right information from your private documents and answers accurately—citing its sources without making things up.",
+    "howItWorks": "An intelligent 24/7 assistant that reads your company's Google Docs and product guides. When a customer or team member asks a question, the AI finds the exact right information from your private documents and answers accurately—citing its sources without making things up.",
+    "problemSolved": "Stops your support team from answering the exact same customer questions over and over again. Customers get instant, 24/7 answers based strictly on your company's verified information, freeing staff for high-value tasks."
   },
   {
     "idx": 2,
@@ -997,14 +997,14 @@
   },
   {
     "idx": 3,
-    "slug": "Workflows / enterprise-rag-support",
-    "nodesCount": "11 NODES",
+    "slug": "Workflows / ai-lead-qualification",
+    "nodesCount": "18 NODES",
     "badge": "ACTIVE IN N8N",
-    "title": "ENTERPRISE RAG KNOWLEDGE PIPELINE & SUPPORT CHATBOT",
-    "img": "images/workflow-rag-chatbot.png?v=2",
-    "desc": "An intelligent 24/7 assistant that reads your company's Google Docs and product guides. When a customer or team member asks a question, the AI finds the exact right information from your private documents and answers accurately—citing its sources without making things up.",
-    "howItWorks": "An intelligent 24/7 assistant that reads your company's Google Docs and product guides. When a customer or team member asks a question, the AI finds the exact right information from your private documents and answers accurately—citing its sources without making things up.",
-    "problemSolved": "Stops your support team from answering the exact same customer questions over and over again. Customers get instant, 24/7 answers based strictly on your company's verified information, freeing staff for high-value tasks."
+    "title": "AI INBOUND LEAD QUALIFICATION & ENRICHMENT ENGINE",
+    "img": "images/workflow-lead-qualification.png?v=2",
+    "desc": "Whenever someone fills out a contact form on your website, this system instantly visits their company website, gathers background information, and uses AI to see if they are an ideal client. It automatically sorts leads into Hot, Warm, or Cold, saves their profile into Google Sheets, and sends an urgent notification to your sales team.",
+    "howItWorks": "Whenever someone fills out a contact form on your website, this system instantly visits their company website, gathers background information, and uses AI to see if they are an ideal client. It automatically sorts leads into Hot, Warm, or Cold, saves their profile into Google Sheets, and sends an urgent notification to your sales team.",
+    "problemSolved": "Stops good business leads from slipping away. Sales reps no longer have to spend 20 minutes manually researching every company that contacts them—hot leads get contacted within minutes instead of hours."
   },
   {
     "idx": 4,
