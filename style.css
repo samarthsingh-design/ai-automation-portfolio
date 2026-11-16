@@ -20,13 +20,15 @@
 html {
   scroll-behavior: smooth;
   width: 100%;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
   width: 100%;
-  min-height: 100%;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
   background: #000000;
   color: var(--text);
   font-family: "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
@@ -194,6 +196,30 @@ canvas#bg {
   position: relative;
   z-index: 10;
   width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(170, 136, 255, 0.25) transparent;
+}
+
+.page-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.page-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.page-container::-webkit-scrollbar-thumb {
+  background: rgba(170, 136, 255, 0.25);
+  border-radius: 3px;
+}
+
+.page-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(170, 136, 255, 0.45);
 }
 
 .page-section {

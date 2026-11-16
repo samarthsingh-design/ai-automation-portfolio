@@ -792,17 +792,18 @@
   // ==========================================
   // 6. ACTIVE NAVIGATION HIGHLIGHTING
   // ==========================================
+  const pageContainer = document.querySelector('.page-container');
   const sections = document.querySelectorAll('.page-section');
   const navLinks = document.querySelectorAll('.nav-link');
 
   function updateActiveNav() {
     let currentId = 'intro';
-    const scrollY = window.scrollY + 200;
+    const currentScrollY = (pageContainer ? pageContainer.scrollTop : window.scrollY) + 200;
 
     sections.forEach((section) => {
       const top = section.offsetTop;
       const height = section.offsetHeight;
-      if (scrollY >= top && scrollY < top + height) {
+      if (currentScrollY >= top && currentScrollY < top + height) {
         currentId = section.getAttribute('id');
       }
     });
@@ -836,6 +837,9 @@
   });
 
   window.addEventListener('scroll', updateActiveNav, { passive: true });
+  if (pageContainer) {
+    pageContainer.addEventListener('scroll', updateActiveNav, { passive: true });
+  }
 
   // Initial route / hash scroll check on page load
   function checkInitialRoute() {
@@ -1243,6 +1247,7 @@
     modalEl.classList.add('is-open');
     modalEl.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    if (pageContainer) pageContainer.style.overflow = 'hidden';
   }
 
   function closeCanvasModal() {
@@ -1250,6 +1255,7 @@
     modalEl.classList.remove('is-open');
     modalEl.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+    if (pageContainer) pageContainer.style.overflow = 'auto';
   }
 
   if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeCanvasModal);
@@ -1336,8 +1342,11 @@
     camera.updateMatrixWorld();
 
     // Subtle scroll-driven parallax rotation
-    const scrollMax = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    const scrollRatio = window.scrollY / scrollMax;
+    const currentScrollY = pageContainer ? pageContainer.scrollTop : window.scrollY;
+    const scrollMax = pageContainer
+      ? Math.max(1, pageContainer.scrollHeight - pageContainer.clientHeight)
+      : Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    const scrollRatio = currentScrollY / scrollMax;
     particleGroup.rotation.y = baseRotY + scrollRatio * 0.35;
     particleGroup.rotation.x = baseRotX + scrollRatio * 0.12;
 
