@@ -868,6 +868,10 @@ canvas#bg {
   -webkit-user-drag: none;
   filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
   transition: filter 0.3s ease;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Execution Pulse Beam across diagram */
@@ -1280,6 +1284,10 @@ canvas#bg {
   user-select: none;
   -webkit-user-drag: none;
   filter: drop-shadow(0 12px 36px rgba(0, 0, 0, 0.75));
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .modal-viewport-footer {

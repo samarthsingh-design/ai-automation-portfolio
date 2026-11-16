@@ -6,6 +6,7 @@ node_modules/
 
 # Temporary / Scratch
 scratch/
+images/originals_backup/
 *.log
 
 # OS & Editor
