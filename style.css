@@ -1955,12 +1955,24 @@ canvas#bg {
   .canvas-topbar {
     padding: 0 8px;
     gap: 6px;
+    justify-content: space-between;
   }
-  .canvas-crumb-text {
-    max-width: 130px;
+  .canvas-topbar .canvas-breadcrumb {
+    display: none;
   }
   .canvas-actions .canvas-zoom-group {
+    display: flex;
+  }
+  .canvas-zoom-group .zoom-reset {
     display: none;
+  }
+  .canvas-zoom-btn {
+    padding: 2px 6px;
+    font-size: 11px;
+  }
+  .canvas-zoom-label {
+    min-width: 32px;
+    font-size: 9.5px;
   }
   .modal-workspace {
     grid-template-columns: 1fr;
@@ -2032,8 +2044,16 @@ canvas#bg {
     height: 30px;
     font-size: 18px;
   }
+  .canvas-info-pill {
+    font-size: 9.5px;
+    padding: 3px 8px;
+    max-width: 92%;
+    flex-wrap: wrap;
+    line-height: 1.35;
+  }
   .canvas-help-text {
-    display: none;
+    display: inline;
+    color: rgba(255, 255, 255, 0.6);
   }
   .project-card {
     padding: 18px 20px;
