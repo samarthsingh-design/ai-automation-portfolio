@@ -1,0 +1,674 @@
+{
+  "name": "order tracker",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        304
+      ],
+      "id": "4c164968-4e53-4eeb-bc99-c9d91e5b2979",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.order_status }}",
+                    "rightValue": "Pending",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c85f18e6-bb2c-4ae0-93db-12472103ec6b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Pending"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "12db4460-029d-4aad-91b5-e0dd106657b0",
+                    "leftValue": "={{ $json.order_status }}",
+                    "rightValue": "Processing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "processing"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f93a464c-56d6-4774-8e54-d80a6223eaf5",
+                    "leftValue": "={{ $json.order_status }}",
+                    "rightValue": "Refunded",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "refunded"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0091daef-dbd7-4504-9b4b-ab3fd704cb9e",
+                    "leftValue": "={{ $json.order_status }}",
+                    "rightValue": "Cancelled",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancelled"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -272,
+        272
+      ],
+      "id": "849cbd9e-db90-4cde-8988-dbd4803ff6d8",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "fromEmail": "samarthsinghyt@gmail.com",
+        "toEmail": "samarthsingh0008@gmail.com",
+        "subject": "=order is pending  {{ $json.order_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        16
+      ],
+      "id": "30c1f8a5-6201-4bc0-9509-8b3dd3740d83",
+      "name": "Send an Email",
+      "webhookId": "6aa35538-821f-4006-a738-b099aa785514",
+      "credentials": {
+        "smtp": {
+          "id": "LcMYmRXgbbJstX8J",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BSVVCSFJT",
+          "mode": "list",
+          "cachedResultName": "all-samarth"
+        },
+        "text": "=orders are processing {{ $json.order_id }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        400,
+        208
+      ],
+      "id": "de5ec599-2a85-4c67-b138-efce17cace15",
+      "name": "Send a message",
+      "webhookId": "116cb2b9-a572-4813-ab0d-bfcee1cc4583",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "zr7n4Xp7H8nNtwYz",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BSW02C2UX",
+          "mode": "list",
+          "cachedResultName": "new-channel"
+        },
+        "text": "=refunded orders  {{ $json.order_id }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        400,
+        400
+      ],
+      "id": "c79bd116-8971-43ef-a7d3-02009fa04bfe",
+      "name": "Send a message1",
+      "webhookId": "917d844a-e029-41dd-bd9d-3ad038814262",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "zr7n4Xp7H8nNtwYz",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "samarthsingh111223@gmail.com",
+        "subject": "notice",
+        "emailType": "text",
+        "message": "=cancelled orders  {{ $json.order_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        592
+      ],
+      "id": "faae2044-060e-4964-bd4c-052e25ba8cac",
+      "name": "Send a message2",
+      "webhookId": "c510d52d-3083-478b-92bb-6ae32fc1cfd0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7PVoyCBKi9XfwVXo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "order_id",
+        "joinMode": "keepEverything",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -720,
+        304
+      ],
+      "id": "66ebc05e-620c-4dcd-bd49-3842c03771e1",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "158zHmYHsCFETnuwnz1za-rCUGEbkbn33LAhs9FFUs7I",
+          "mode": "list",
+          "cachedResultName": "Mock_Orders_Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/158zHmYHsCFETnuwnz1za-rCUGEbkbn33LAhs9FFUs7I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1046332817,
+          "mode": "list",
+          "cachedResultName": "Mock_Order_Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/158zHmYHsCFETnuwnz1za-rCUGEbkbn33LAhs9FFUs7I/edit#gid=1046332817"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -944,
+        208
+      ],
+      "id": "28c25cc5-96ba-49d7-94cb-3670300d6012",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sAzPgREPCusSapVj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1nKvC3uJHYmzwllEbpfPrKa6vBMO657tztx7sjhhgAzc",
+          "mode": "list",
+          "cachedResultName": "Mock_Order_Details_Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nKvC3uJHYmzwllEbpfPrKa6vBMO657tztx7sjhhgAzc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 577413004,
+          "mode": "list",
+          "cachedResultName": "Mock_Order_Details_Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nKvC3uJHYmzwllEbpfPrKa6vBMO657tztx7sjhhgAzc/edit#gid=577413004"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -944,
+        400
+      ],
+      "id": "6f437624-9485-475c-b136-cc06cc4bd758",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sAzPgREPCusSapVj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "540a48cc-c849-4a37-aac0-5b3006a1d418",
+              "name": "order_id",
+              "value": "={{ $json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "aa38eda4-f3a9-4ec4-bb15-12066df0b560",
+              "name": "order_status",
+              "value": "={{ $json.order_status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -496,
+        304
+      ],
+      "id": "39969b2b-9c3a-48c1-8829-58e8ff3143a7",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        16
+      ],
+      "id": "7a159fb3-7694-4b73-83d4-f3d1e863cf19",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        208
+      ],
+      "id": "ad13eb56-274a-4b6d-a394-9c96e02ae1da",
+      "name": "Remove Duplicates1"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "order_id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        176,
+        16
+      ],
+      "id": "0dd38e82-2e61-4f73-9eaa-0f7ff9181bf4",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "order_id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        176,
+        208
+      ],
+      "id": "801001da-1de1-4d63-8ae4-dbc723ec0399",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        400
+      ],
+      "id": "1ef9ceb6-7829-4ca4-bf7f-dc9fa5d9c33b",
+      "name": "Remove Duplicates2"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "order_id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        176,
+        400
+      ],
+      "id": "e9c4540c-e0dd-4347-b1ca-12ed26edd79d",
+      "name": "Aggregate2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        592
+      ],
+      "id": "757a57e8-fe00-47cb-bcb8-c12fbabf77e8",
+      "name": "Remove Duplicates3"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "order_id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        176,
+        592
+      ],
+      "id": "45e192c6-f8bd-4575-a2a7-e5bc6889f002",
+      "name": "Aggregate3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Remove Duplicates1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Remove Duplicates2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Remove Duplicates3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates2": {
+      "main": [
+        [
+          {
+            "node": "Aggregate2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate2": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates3": {
+      "main": [
+        [
+          {
+            "node": "Aggregate3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate3": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "033cf193-07fb-4e53-aed7-e2ee5d2ee848",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "06fe1c96787c03b883c24143044547a11d5d5a31c30cb275d58c7b26fb42e201"
+  },
+  "nodeGroups": [],
+  "id": "PLY1NsB9ZmuYqoXB",
+  "tags": []
+}

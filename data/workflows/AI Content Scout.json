@@ -1,0 +1,435 @@
+{
+  "name": "AI Content Scout",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 8
+            }
+          ]
+        }
+      },
+      "id": "d7918ca5-7783-4b12-9091-e6ebbd4b9d65",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "id": "6275ce8a-0be9-4304-8437-0d26ee386a19",
+      "name": "Merge All Feeds",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst rawNormalized = [];\n\nfor (const item of items) {\n  const data = item.json;\n  let rawUrl = data.link || data.url || data.guid || '';\n  if (!rawUrl || typeof rawUrl !== 'string') continue;\n\n  let cleanUrl = rawUrl;\n  try {\n    const urlObj = new URL(rawUrl);\n    const searchParams = new URLSearchParams();\n    for (const [key, val] of urlObj.searchParams.entries()) {\n      if (!key.startsWith('utm_') && !['ref', 'source', 'fbclid', 'gclid'].includes(key)) {\n        searchParams.append(key, val);\n      }\n    }\n    urlObj.search = searchParams.toString() ? '?' + searchParams.toString() : '';\n    urlObj.hash = '';\n    cleanUrl = urlObj.toString();\n  } catch (e) {\n    cleanUrl = rawUrl.split('?')[0].split('#')[0];\n  }\n\n  // Extract the fullest substantive content available from the feed\n  let rawSnippet = data['content:encoded'] || data.content || data.summary || data.description || data.contentSnippet || '';\n  let cleanDesc = String(rawSnippet)\n    .replace(/<[^>]*>/g, ' ')\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&amp;/g, '&')\n    .replace(/&quot;/g, '\\\"')\n    .replace(/\\\\s+/g, ' ')\n    .trim()\n    .slice(0, 3000);\n\n  let sourceName = 'Tech Announcement';\n  if (cleanUrl.includes('techcrunch.com')) sourceName = 'TechCrunch AI';\n  else if (cleanUrl.includes('huggingface.co')) sourceName = 'Hugging Face';\n  else if (cleanUrl.includes('github.blog')) sourceName = 'GitHub Blog';\n  else if (cleanUrl.includes('simonwillison.net')) sourceName = 'Simon Willison';\n  else if (cleanUrl.includes('ycombinator.com') || cleanUrl.includes('hnrss.org')) sourceName = 'Hacker News';\n\n  rawNormalized.push({\n    title: (data.title || '').trim(),\n    url: cleanUrl,\n    sourceName: sourceName,\n    pubDate: data.pubDate || data.isoDate || new Date().toISOString(),\n    description: cleanDesc\n  });\n}\n\n// Keep only the most recent 15 items per source to avoid processing legacy archive feeds\nconst sourceCounts = {};\nconst filtered = [];\n\nfor (const entry of rawNormalized) {\n  sourceCounts[entry.sourceName] = (sourceCounts[entry.sourceName] || 0) + 1;\n  if (sourceCounts[entry.sourceName] <= 15) {\n    filtered.push({ json: entry });\n  }\n}\n\nreturn filtered;"
+      },
+      "id": "6584128d-ada8-431b-913e-c986a731e022",
+      "name": "Normalize & Tag Sources",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.url }}",
+        "options": {
+          "scope": "workflow",
+          "historySize": 5000
+        }
+      },
+      "id": "bf2c863c-32ea-4cc7-9fb1-178c6ea0667c",
+      "name": "Deduplicate Seen URLs",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        896,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst scored = [];\n\nconst highValueKeywords = [\n  'ai', 'llm', 'gpt', 'gemini', 'claude', 'agent', 'automation', 'n8n',\n  'workflow', 'github', 'open source', 'open-source', 'repository', 'tool',\n  'python', 'javascript', 'framework', 'demo', 'breakthrough', 'model',\n  'productivity', 'terminal', 'coding', 'developer', 'prompt', 'api'\n];\n\nconst lowValueKeywords = [\n  'lawsuit', 'sued', 'earnings', 'quarterly', 'shares fall', 'stocks',\n  'investors', 'layoffs', 'merger', 'acquisition', 'regulatory', 'eu fine'\n];\n\nfor (const item of items) {\n  const data = item.json;\n  const text = `${data.title} ${data.description}`.toLowerCase();\n  \n  let score = 0;\n  for (const kw of highValueKeywords) {\n    if (text.includes(kw)) score += 2;\n  }\n  for (const kw of lowValueKeywords) {\n    if (text.includes(kw)) score -= 4;\n  }\n\n  if (text.includes('github.com') || text.includes('release') || text.includes('tutorial')) score += 3;\n  if (text.includes('workflow') || text.includes('n8n') || text.includes('agent')) score += 4;\n\n  if (score >= 4) {\n    scored.push({ item: data, score });\n  }\n}\n\nscored.sort((a, b) => b.score - a.score);\n// Pick top 2 highest scoring discoveries\nconst topArticles = (scored.length > 0 ? scored.slice(0, 2) : items.slice(0, 2)).map(s => s.item || s.json);\n\nconst articlesSummary = topArticles.map((a, idx) => `ARTICLE ${idx + 1}:\n- Title: ${a.title}\n- Source: ${a.sourceName}\n- URL: ${a.url}\n- Article Content: ${a.description}\n`).join('\\n---\\n');\n\nconst prompt = `You are an elite AI tech research specialist and short-form video producer. Your mission is to provide an in-depth, verified factual briefing on these tech discoveries so a creator can understand everything without reading the original article.\n\nAnalyze these 2 curated tech discoveries:\n${articlesSummary}\n\nFor EACH discovery, provide a comprehensive briefing and ready-to-shoot Instagram Reel concept.\nReturn a STRICT JSON ARRAY of 2 objects (one for each article) matching this exact schema:\n[\n  {\n    \"article_index\": 1,\n    \"topic_title\": \"Punchy topic title under 50 characters\",\n    \"category\": \"AI Tools & Automation\",\n    \"relevance_score\": 9,\n    \"in_depth_summary\": \"Comprehensive 3-5 sentence factual explanation explaining exactly what the tool/feature is, the underlying technical mechanics (how it works, architecture, models), and why it is a major development for builders.\",\n    \"target_audience\": \"Who this is for (e.g. full-stack developers, AI automators) and why it stops their scroll.\",\n    \"verified_specs_and_facts\": [\n      \"Pricing / License: Exact cost model (e.g. Free tier, token pricing, or open-source license)\",\n      \"System Requirements: Required runtime or prerequisites (e.g. Docker, Python, Cloud API, or local GPU)\",\n      \"Key Technical Benchmark / Standout Spec: Specific metric or technical capability from the source\"\n    ],\n    \"hook\": \"Exact high-retention 3-second opening hook line to speak on camera, plus [ON-SCREEN TEXT] directions.\",\n    \"reel_concept\": \"Complete 20-45 second video flow:\\n• [0-5s] Hook (high-energy intro)\\n• [5-15s] Context (why existing approaches fall short)\\n• [15-35s] Visual Demo (exact screen steps: CLI run, repo demo, or UI interaction)\\n• [35-45s] Takeaway & CTA (concrete next step).\",\n    \"talking_points\": [\n      \"Detailed Point 1 with exact technical facts and capabilities from the source\",\n      \"Detailed Point 2 explaining why this is better or different from alternatives\",\n      \"Detailed Point 3 explaining the concrete next step to try or implement it\"\n    ],\n    \"recording_format\": \"Screen Recording + Face Cam Bubble\",\n    \"visual_demo_guide\": \"Precise visual direction: what browser tab, terminal command, GitHub repo, or UI to show on screen.\",\n    \"claims_and_verification\": \"Verified facts vs caveats: what is confirmed in the source vs prerequisites to check before recording.\"\n  }\n]\n\nCRITICAL RULES:\n- Never fabricate benchmarks, stars, or statistics.\n- Extract concrete facts, names, and details directly from the provided article content.\n- Return ONLY the valid raw JSON array. No conversational text.`;\n\nreturn [{\n  json: {\n    articles: topArticles,\n    ai_prompt: prompt\n  }\n}];"
+      },
+      "id": "70dd03fb-cee0-44be-9da7-f2d28b6441c5",
+      "name": "Pre-Filter & Rank Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst preFilterNode = $('Pre-Filter & Rank Candidates').first();\nconst sourceArticles = preFilterNode?.json?.articles || [];\n\nlet rawText = '';\nconst item = items[0] || {};\nif (typeof item.json?.text === 'string') {\n  rawText = item.json.text;\n} else if (item.json?.content?.parts?.[0]?.text) {\n  rawText = item.json.content.parts[0].text;\n} else if (typeof item.json?.content === 'string') {\n  rawText = item.json.content;\n} else if (item.json?.response?.text) {\n  rawText = item.json.response.text;\n} else if (typeof item.json?.output === 'string') {\n  rawText = item.json.output;\n}\n\nlet generatedList = [];\nif (rawText) {\n  try {\n    let cleanJson = String(rawText).trim();\n    if (cleanJson.startsWith('```')) {\n      cleanJson = cleanJson.replace(/^```[a-z]*\\n?/i, '').replace(/\\n?```$/, '').trim();\n    }\n    const parsed = JSON.parse(cleanJson);\n    if (Array.isArray(parsed)) {\n      generatedList = parsed;\n    } else if (typeof parsed === 'object' && parsed !== null) {\n      generatedList = [parsed];\n    }\n  } catch (err) {\n    console.error('Failed to parse AI output JSON array:', err.message);\n  }\n}\n\nconst formatted = [];\nconst count = Math.max(sourceArticles.length, generatedList.length, 1);\n\nfor (let i = 0; i < count; i++) {\n  const source = sourceArticles[i] || {};\n  let ai = generatedList[i];\n\n  if (!ai || typeof ai !== 'object') {\n    ai = {\n      topic_title: source.title || 'Trending Tech Discovery',\n      category: 'AI Tools & Automation',\n      relevance_score: 8,\n      in_depth_summary: source.description || 'Curated discovery from tech scout.',\n      target_audience: 'Developers and automation builders interested in new AI tools.',\n      verified_specs_and_facts: [\n        `Source Publisher: ${source.sourceName || 'Web Announcement'}`,\n        'Check original article for exact pricing and licensing details',\n        `Published Date: ${source.pubDate ? new Date(source.pubDate).toISOString().split('T')[0] : 'Recent'}`\n      ],\n      hook: `Did you see what just dropped in tech? [ON-SCREEN TEXT: Check this out 🚀]`,\n      reel_concept: `• [0-5s] Hook: Announce the discovery\\n• [5-15s] Show context and why it matters\\n• [15-35s] Walk through the project link or repo\\n• [35-45s] Key takeaway & CTA`,\n      talking_points: [\n        `Core capability announced by ${source.sourceName || 'the developer'}`,\n        'Why this is worth testing in your workflow',\n        `Check link in description: ${source.url || ''}`\n      ],\n      recording_format: 'Screen Recording + Face Cam',\n      visual_demo_guide: 'Screen capture of original post or GitHub repository',\n      claims_and_verification: 'Verify free tier availability and compatibility'\n    };\n  }\n\n  const score = Number(ai.relevance_score) || 8;\n  const talkingPointsList = Array.isArray(ai.talking_points)\n    ? ai.talking_points.map((pt, idx) => `${idx + 1}. ${pt}`).join('\\n\\n')\n    : String(ai.talking_points || '');\n\n  const specsList = Array.isArray(ai.verified_specs_and_facts)\n    ? ai.verified_specs_and_facts.map(s => `• ${s}`).join('\\n')\n    : String(ai.verified_specs_and_facts || '');\n\n  const section1 = `📌 EXECUTIVE TOPIC SUMMARY:\n${ai.in_depth_summary || ai.summary || source.description || 'N/A'}\n\n🎯 TARGET AUDIENCE:\n${ai.target_audience || 'AI Developers & Automation Builders'}`.slice(0, 1900);\n\n  const section2 = `🔍 VERIFIED SPECS & FACT-CHECK:\n${specsList}`.slice(0, 1900);\n\n  const section3 = `🎬 INSTAGRAM REEL SCRIPT (20–45s):\n🎣 3-Second Opening Hook:\n\"${ai.hook || 'N/A'}\"\n\n⏱️ Step-By-Step Video Breakdown:\n${ai.reel_concept || 'N/A'}`.slice(0, 1900);\n\n  const section4 = `💡 KEY TALKING POINTS:\n${talkingPointsList}`.slice(0, 1900);\n\n  const section5 = `💻 VISUAL DEMO GUIDE:\n${ai.visual_demo_guide || ai.visual_demo || 'N/A'}\n\n⚠️ VERIFICATION & CAVEATS:\n${ai.claims_and_verification || ai.claims_to_verify || 'Check source URL before recording.'}\n\n🔗 SOURCE & REFERENCES:\nSource: ${source.sourceName || 'Web'}\nURL: ${source.url || 'N/A'}`.slice(0, 1900);\n\n  formatted.push({\n    json: {\n      title: (ai.topic_title || source.title || 'Untitled Idea').slice(0, 100),\n      category: ai.category || 'AI Tools & Automation',\n      url: source.url || '',\n      sourceName: source.sourceName || 'Web',\n      pubDate: source.pubDate ? new Date(source.pubDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],\n      summary: ai.in_depth_summary || ai.summary || '',\n      relevance_score: score,\n      status: 'Inbox',\n      dateDiscovered: new Date().toISOString().split('T')[0],\n      section_summary: section1,\n      section_specs: section2,\n      section_script: section3,\n      section_talking_points: section4,\n      section_verification: section5\n    }\n  });\n}\n\nreturn formatted;"
+      },
+      "id": "0912a315-ba19-4258-a958-e6454c987fe3",
+      "name": "Validate & Format For Notion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "3cd9e5cc-bf23-804c-ba62-e032e7e61c59",
+          "__regex": "(?:https|http)://(?:www\\.notion\\.(?:so|com)|app\\.notion\\.com)/(?:p/)?(?:[a-z0-9-]{2,}/)?([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})"
+        },
+        "title": "={{ $json.title }}",
+        "blockUi": {
+          "blockValues": [
+            {
+              "textContent": "={{ $json.section_summary }}"
+            },
+            {
+              "textContent": "={{ $json.section_specs }}"
+            },
+            {
+              "textContent": "={{ $json.section_script }}"
+            },
+            {
+              "textContent": "={{ $json.section_talking_points }}"
+            },
+            {
+              "textContent": "={{ $json.section_verification }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a88a3c17-f0eb-45ca-a473-7bc83fcac26c",
+      "name": "Save to Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        384
+      ],
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "KCAU5mPPmjkEDRoT",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3.5-lightning:free",
+        "options": {}
+      },
+      "id": "openrouter-model-free",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        640
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "lhITOgC5NyxJpRC1",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.ai_prompt }}",
+        "batching": {}
+      },
+      "id": "generate-reel-concepts-ai",
+      "name": "Generate Reel Concepts (AI)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1344,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+        "options": {}
+      },
+      "id": "d8822b0e-6c87-4f9e-b99b-74880c62c57a",
+      "name": " TechCrunch AI",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://huggingface.co/blog/feed.xml",
+        "options": {}
+      },
+      "id": "e756f2a4-6488-45b3-aaa6-429b9fd638b4",
+      "name": " Hugging Face Blog",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        192
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://github.blog/feed/",
+        "options": {}
+      },
+      "id": "ee3d3b8f-c211-4920-b3f8-32b910861f44",
+      "name": " GitHub Blog",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        384
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://openai.com/news/rss.xml",
+        "options": {}
+      },
+      "id": "d4423d08-5d62-4c01-82a9-172900b7fa8a",
+      "name": "open ai news",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        576
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://hnrss.org/frontpage?points=100",
+        "options": {}
+      },
+      "id": "21306319-9306-49ad-a339-89c0c49c5ba9",
+      "name": " Hacker News",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        768
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": " TechCrunch AI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": " Hugging Face Blog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": " GitHub Blog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "open ai news",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": " Hacker News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Feeds": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Tag Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Tag Sources": {
+      "main": [
+        [
+          {
+            "node": "Deduplicate Seen URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate Seen URLs": {
+      "main": [
+        [
+          {
+            "node": "Pre-Filter & Rank Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate & Format For Notion": {
+      "main": [
+        [
+          {
+            "node": "Save to Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-Filter & Rank Candidates": {
+      "main": [
+        [
+          {
+            "node": "Generate Reel Concepts (AI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Reel Concepts (AI)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Reel Concepts (AI)": {
+      "main": [
+        [
+          {
+            "node": "Validate & Format For Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    " TechCrunch AI": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    " Hugging Face Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    " GitHub Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "open ai news": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    " Hacker News": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "74b91780-5b81-4268-be2b-b7f00c5aebac",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "06fe1c96787c03b883c24143044547a11d5d5a31c30cb275d58c7b26fb42e201"
+  },
+  "nodeGroups": [],
+  "id": "6eTGlvppsbExqsdm",
+  "tags": []
+}

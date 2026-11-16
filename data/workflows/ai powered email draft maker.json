@@ -1,0 +1,691 @@
+{
+  "name": "ai powered email draft maker",
+  "nodes": [
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "o3-mini",
+          "mode": "list",
+          "cachedResultName": "O3-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a helpful email assistant. Your job is to read incoming emails, summarize them in one line, and decide whether they need a reply. If a reply is needed, you will draft a polite response based on the email content. Always draft the response in the HTML format so that it is ready to be sent."
+            },
+            {
+              "content": "=Please respond in the following JSON format:\n\n{\n  \"summary\": \"One sentence summary of the email\",\n  \"reply_needed\": \"Yes or No\",\n  \"suggested_reply\": \"Only if reply_needed is Yes, else leave as empty string\"\n}\n\nHere is the email body received:\n************\n\n{{ $json.text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -800,
+        -224
+      ],
+      "id": "af06419b-9238-497f-b2c7-ce6a35311b92",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JmLouTAsODafkJpK",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1408,
+        -336
+      ],
+      "id": "a988810c-9da1-4cf0-9db3-a853e355b86b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1408,
+        -144
+      ],
+      "id": "4eddff76-4516-4802-b610-2649e7c46a7d",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 1,
+        "simple": false,
+        "filters": {
+          "readStatus": "unread",
+          "receivedAfter": "2026-09-17T00:00:00"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -1184,
+        -240
+      ],
+      "id": "d7b118ff-e02c-4309-a905-770b4219bc90",
+      "name": "Get many messages",
+      "webhookId": "36a07945-5320-4bb6-a0cd-2e5ffe3116a4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7PVoyCBKi9XfwVXo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5fa2d988-766c-4fe7-ad17-a87d4b0684c4",
+              "leftValue": "={{ $json.reply_needed }}",
+              "rightValue": "Yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -608,
+        192
+      ],
+      "id": "9b97a7ef-21d6-4f92-a772-5caae4217f3d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=RE : {{ $('Gmail Trigger').item.json.Subject }}",
+        "emailType": "html",
+        "message": "={{ $json.suggested_reply }}",
+        "options": {
+          "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+          "sendTo": "={{ $('Gmail Trigger').item.json.From.match(/<(.+)>/)?.[1] || $('Gmail Trigger').item.json.From }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -384,
+        288
+      ],
+      "id": "6aed0c81-39ac-4329-8b1d-81bf9237f674",
+      "name": "Create a draft",
+      "webhookId": "12603097-f497-482a-8ad4-6f43321a3ea4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7PVoyCBKi9XfwVXo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are a helpful email assistant. Your job is to read incoming emails, summarize them in one line, and decide whether they need a reply. If a reply is needed, you will draft a polite response based on the email content. Always draft the response in the HTML format so that it is ready to be sent.",
+        "options": {
+          "systemMessage": "=You are an email assistant. You will be given the content of an email. Your job is to analyze it and respond in JSON format only.\n\nYour Tasks:\n1. First, determine if this email is spam, a promotional/marketing email, or an automated notification (e.g. newsletters, no-reply alerts, receipts). If so, treat it as not needing a reply.\n2. Summarize the email in one clear sentence.\n3. Decide if a reply is needed (Yes/No). Genuine, personal, or important emails needing a response should be marked Yes. Spam, newsletters, and automated notifications should be marked No.\n4. If reply_needed is Yes, write a short, polite, and professional reply I can send as-is.\n\nRespond with raw JSON only. Do not include markdown formatting, code fences, explanations, or any text outside the JSON object.\n\nJSON format:\n{\n  \"is_spam\": \"Yes or No\",\n  \"summary\": \"One sentence summary of the email\",\n  \"reply_needed\": \"Yes or No\",\n  \"suggested_reply\": \"Only if reply_needed is Yes, else leave as empty string\"\n}\n\nHere is the email content:\n**********\n\n{{ $json.text }}\n\n**********"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1184,
+        192
+      ],
+      "id": "293244e8-eebb-462e-b50e-d9c36243cd22",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "nousresearch/hermes-3-llama-3.1-70b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        416
+      ],
+      "id": "06e45fe1-9e85-4895-96e6-1e10bd395e93",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "lhITOgC5NyxJpRC1",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = JSON.parse($json.output);\nreturn { json: parsed };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -832,
+        192
+      ],
+      "id": "b23d7b9c-83fb-4447-8bf5-fe513f412284",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "6264854742",
+        "message": "=📧 New Email Alert!\n\n📝 Summary:\n{{ $('Code in JavaScript').item.json.summary }}\n\n✅ Reply Required:\n{{ $('Code in JavaScript').item.json.reply_needed }}\n\n✏️ Suggested Reply:\n{{ $('Code in JavaScript').item.json.suggested_reply }}\n\n📋 What next?\n- Review and edit the draft reply in your Gmail\n- Or approve it by clicking [Approve / Disapprove] buttons below\n📋 What next?\n- Review and edit the draft reply in your Gmail\n- Or approve it by clicking [Approve / Disapprove] buttons below",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        -304
+      ],
+      "id": "36b0c37f-fd84-4415-b4d6-820153834f15",
+      "name": "Send message and wait for response",
+      "webhookId": "f2e79225-721d-4a0c-bcca-91c9db18cca4",
+      "credentials": {
+        "telegramApi": {
+          "id": "l4XXKf9hcM4oBk4M",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "33b79e88-abf3-4f4e-ade7-97341fc2e2d4",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        64,
+        288
+      ],
+      "id": "d028ee10-00ca-4673-947d-a1735890fa34",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "chatId": "6264854742",
+        "text": "=📧 New Email Alert!\n\n📝 Summary:\n{{ $('Code in JavaScript').item.json.summary }}\n\n✅ Reply Required: No\n\nNo need to give a reply. ",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        -64
+      ],
+      "id": "595efa71-5291-4e3a-89b3-62e9dca7e0c5",
+      "name": "Send a text message",
+      "webhookId": "f2e79225-721d-4a0c-bcca-91c9db18cca4",
+      "credentials": {
+        "telegramApi": {
+          "id": "l4XXKf9hcM4oBk4M",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        288,
+        384
+      ],
+      "id": "caec7181-39fd-4aab-a5e5-501cf3782753",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "get",
+        "messageId": "={{ $('Create a draft').item.json.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        192
+      ],
+      "id": "ab70022d-03c9-4125-8c9d-b4d0615c7b85",
+      "name": "Get a draft",
+      "webhookId": "bf9fde11-5c3e-4318-ab5c-abc6497bff18",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7PVoyCBKi9XfwVXo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/drafts/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ $('Create a draft').item.json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        512,
+        192
+      ],
+      "id": "8f513c2c-0874-4c7a-af53-32d230e0f0e4",
+      "name": "HTTP Request",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7PVoyCBKi9XfwVXo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "maxResults": 1,
+        "filters": {
+          "includeSpamTrash": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1408,
+        192
+      ],
+      "id": "7dcc1ec6-e62e-4df6-8051-59820536d4f2",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7PVoyCBKi9XfwVXo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "sendAndWait",
+        "user": {
+          "__rl": true,
+          "value": "U0BU5MMLBL0",
+          "mode": "list",
+          "cachedResultName": "Samarth Singh (@samarthsinghyt)"
+        },
+        "message": "=📧 New Email Alert!\n\n📝 Summary:\n{{ $('Code in JavaScript').item.json.summary }}\n\n✅ Reply Required:\n{{ $('Code in JavaScript').item.json.reply_needed }}\n\n✏️ Suggested Reply:\n{{ $('Code in JavaScript').item.json.suggested_reply }}\n\n📋 What next?\n- Review and edit the draft reply in your Gmail\n- Or approve it by clicking [Approve / Disapprove] buttons below\n📋 What next?\n- Review and edit the draft reply in your Gmail\n- Or approve it by clicking [Approve / Disapprove] buttons below",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "buttonDisapprovalStyle": "primary"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        -176,
+        304
+      ],
+      "id": "c44b9acd-612f-425f-a3ac-7a055af6d82f",
+      "name": "Send message and wait for response1",
+      "webhookId": "218a3aca-7b1d-46f9-8a9c-29c1d453d00a",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "zr7n4Xp7H8nNtwYz",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "U0BU5MMLBL0",
+          "mode": "list",
+          "cachedResultName": "Samarth Singh (@samarthsinghyt)"
+        },
+        "text": "=📧 New Email Alert!  📝 Summary: {{ $('Code in JavaScript').item.json.summary }}  ✅ Reply Required: No  No need to give a reply. ",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        -352,
+        64
+      ],
+      "id": "3351e487-bf07-4401-a063-aba1d581163e",
+      "name": "Send a message",
+      "webhookId": "218a3aca-7b1d-46f9-8a9c-29c1d453d00a",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "zr7n4Xp7H8nNtwYz",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Get many messages": [
+      {
+        "json": {
+          "id": "1a0c7d1456eadbbe",
+          "threadId": "1a0c7d1456eadbbe",
+          "labelIds": [
+            "UNREAD",
+            "IMPORTANT",
+            "CATEGORY_PERSONAL",
+            "INBOX"
+          ],
+          "sizeEstimate": 7371,
+          "headers": {
+            "delivered-to": "Delivered-To: samarthsinghyt@gmail.com",
+            "received": "Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])\r\n        by mx.google.com with SMTPS id a640c23a62f3a-c2a9c627424sor20684266b.21.2026.09.21.23.32.55\r\n        for <samarthsinghyt@gmail.com>\r\n        (Google Transport Security);\r\n        Mon, 21 Sep 2026 23:32:55 -0700 (PDT)",
+            "x-received": "X-Received: by 2002:a17:907:94d6:b0:c29:f5d8:9c7c with SMTP id\r\n a640c23a62f3a-c2a158869b0mr1000249466b.43.1790058775104; Mon, 21 Sep 2026\r\n 23:32:55 -0700 (PDT)",
+            "arc-seal": "ARC-Seal: i=1; a=rsa-sha256; t=1790058775; cv=none;\r\n        d=google.com; s=arc-20260327;\r\n        b=ZpL8aKcr00azlDmZvNb47qysdF5R8KGN+sfKBE37aduIDa3l/c3bY/FrgnZdRvw9Ck\r\n         iTSrM9k8hlixwiKX0KEFFhbG9+IFD3DcYVGWkEAxUIFNFtZjx4w1iAhQj3lSoAp2ZrI8\r\n         y5PwtC41WprfATMuYWFBIQnShGwZVBEuN7fwRfbbGyqMueoa4m/461w+E99EcsWlSLSP\r\n         F8qO0gVGij0a36cgq7GWabb23LrUvw7aJE9foWC9aReBTFPBchyxZYJKLEBSqnbed+Z8\r\n         kaXuz8cDB1Af2LVsqy+E8ly9czge0nkIbs3PY9iKy9DlGucdXiH7iKlEgyJwSvKKRo0h\r\n         hYzg==",
+            "arc-message-signature": "ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;\r\n        h=to:subject:message-id:date:from:mime-version:dkim-signature;\r\n        bh=jeKCZiFdBQAb+SN+zaQ7yritkqHahUyFfh9b7RmEiaE=;\r\n        fh=r3emEppw0Eja+0tDir1H/rYcGVIxaqn1rqPLZZZBXU4=;\r\n        b=YIKklTGDZARdjkJfc8d4ueh5Wp5wiUhsMr9LSNNdUEEXp5qCD4MpiIp4we7EX6fAXp\r\n         CeG7FyRAnQvm9hj8d1xE1NS1GGDaoYrwY8k/BC2ECwI4kHSfZVYqjDSJPHcg9WomooZT\r\n         Canr4RwRgDbKkTmnr7NGZK+MqvZx2oeq/U9CvCDKoMhN12UV4IEafUAag6mrwh035F7P\r\n         udOTCfUvw6n/TO2QDteR2uWlTEJg9wCb9xNK2VQW59yWV+nJ0gcLmTtSou9yIprogRzh\r\n         kwfNyaNdBrOb3iPCzr5sgFfZb3hh7SORGX5QGfcXxnLZkkrWH6nXuRy/4f5dho8m1D53\r\n         eIWQ==;\r\n        dara=google.com",
+            "arc-authentication-results": "ARC-Authentication-Results: i=1; mx.google.com; arc=none",
+            "return-path": "Return-Path: <samarthsingh111223@gmail.com>",
+            "received-spf": "Received-SPF: pass (google.com: domain of samarthsingh111223@gmail.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;",
+            "authentication-results": "Authentication-Results: mx.google.com;\r\n       dkim=pass header.i=@gmail.com header.s=20251104 header.b=OVqt87VB;\r\n       arc=pass (i=1);\r\n       spf=pass (google.com: domain of samarthsingh111223@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=samarthsingh111223@gmail.com;\r\n       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;\r\n       dara=pass header.i=@gmail.com",
+            "dkim-signature": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=gmail.com; s=20251104; t=1790058775; x=1790663575; dara=google.com;\r\n        h=content-type:to:subject:message-id:date:from:mime-version:from:to\r\n         :cc:subject:date:message-id:reply-to:content-type;\r\n        bh=jeKCZiFdBQAb+SN+zaQ7yritkqHahUyFfh9b7RmEiaE=;\r\n        b=OVqt87VB5mlNj5Xr7pFA5BQKYeDi3w6UhAKaVVX5EQh7hMX67QmdCZFIBBK3XKuZt0\r\n         RDEPlU8D580aK63BIndOCKCgh0QZJfK5Q574EWmL5qbYD74wUzYwBiJKyacdtJgt2Nog\r\n         qZha4swfjYX9WrAqOqDjEuiqeZIeBvZiBZNRaS2JbBttuyPruLBQxB8c+LWhETYTxWzx\r\n         1ecq3bhDKVdOQgVaQjLiuW7dLJjF+fE3MIhLcsiETY7i1+W92PZVZgbnQAqhIYHh6lHJ\r\n         lG8N35YOPDv4PdqY+WL6e/+fU6PXp+wSg74IN+gsB3yH0cTcpNGXjWKIaTDlbPcfqo+l\r\n         DZOg==",
+            "x-google-dkim-signature": "X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=1e100.net; s=20260707; t=1790058775; x=1790663575;\r\n        h=content-type:to:subject:message-id:date:from:mime-version:x-gm-gg\r\n         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to\r\n         :content-type;\r\n        bh=jeKCZiFdBQAb+SN+zaQ7yritkqHahUyFfh9b7RmEiaE=;\r\n        b=MioFg7+ggUUuLvC/b/PQh851ZC0CtFa7T+JmPPC4HLJ53oOJKTfhe0F08smILO/SbV\r\n         JKm68lZVReal6SO1xNbMvXAxIREfE/B44FdSk/2EtYnJ15jHiGCwAJQgjLNAHlgWp4dJ\r\n         7t3GK0zr/TS7FlZBQZfa9sdAQa0JvjsZTDI6MRmlnl5EIhOYioZMREVHWKK4KdJqRuXf\r\n         ogcTKeJ0/rSobHxtZjPocoGcs9jAI+DgD5Zaxw+e0dLbLtp/PLrrH6P+A7vNh8EUcmj7\r\n         Omm2RfJgqDuxplmHqoozHFiS89eAaaGVlHd0F8hQ1DUbhTy+7apQawlW3nZhBbdaEntC\r\n         v3FA==",
+            "x-gm-message-state": "X-Gm-Message-State: AFuF++mODfkdSR/nJN7GNRM9sNrKkgxu4xxa2NFkV/KKjNiH04C4y8Gf\r\n\tot/z79E6R0BOgK6G5EHyM9lhH2U46WySwVW2AVli4GRe5HnAPeazbpmZrmBUvtLZ8I5j6pvPDgb\r\n\tMt8/epTNoPr85qQ0s4CeXgifCKBwfkoUqPQ==",
+            "x-gm-gg": "X-Gm-Gg: AYBFou0Ar5pBnZxEi6DaomGnYFtVvdE8w/yvTE0hFkrijHIbo+TCqcjnjrSJuAz199T\r\n\tQr4omsOXsLZFDC14Zfe5vpxsu+7JEXfR7S1J3KrrYJzk4u/s/BGS85twsBPt3UdR37FwQbczRF9\r\n\t/UKzd2EOkLN9B3WF3SyQH2o0nixEBqQ5s5xDHbwL4YlMayVV5m8QBxD5RiB7xvy0FvvdbSVWXlH\r\n\tCmJHl82mmZctD51n4kyi1hN3/PiCk4AhYFx5tI1ljGItSUQSDmNR0uvkUZQwx8nNKtWv81dULJI\r\n\trJbZS6c16SwXkLs3vfOnTM5M4uChGmRhfgGpNCXjUKDLEzjGvF9RsIo=",
+            "mime-version": "MIME-Version: 1.0",
+            "from": "From: Samarth Singh <samarthsingh111223@gmail.com>",
+            "date": "Date: Tue, 22 Sep 2026 12:02:44 +0530",
+            "x-gm-features": "X-Gm-Features: AcwNN1VgN3ruySl_pCkQigTpyylIuRoR3y-jtdv-9bjnz_i2AWfhxrVfy8htkiw",
+            "message-id": "Message-ID: <CACe9kDYjDuKxVtnLfdphQ3pKD_bDUyRuAkZ+g9u3M4KMS4iKHw@mail.gmail.com>",
+            "subject": "Subject: Message",
+            "to": "To: Samarth Singh <samarthsinghyt@gmail.com>",
+            "content-type": "Content-Type: multipart/alternative; boundary=\"0000000000006ad1df065c0c89a4\""
+          },
+          "html": "<div dir=\"auto\">Hey sam, can you send me ₹500? I need it for a payment. I’ll let you know once I receive it. Thanks! </div>\n",
+          "text": "Hey sam, can you send me ₹500? I need it for a payment. I’ll let you know\nonce I receive it. Thanks!\n",
+          "textAsHtml": "<p>Hey sam, can you send me &#x20B9;500? I need it for a payment. I&rsquo;ll let you know<br/>once I receive it. Thanks!</p>",
+          "subject": "Message",
+          "date": "2026-09-22T06:32:44.000Z",
+          "to": {
+            "value": [
+              {
+                "address": "samarthsinghyt@gmail.com",
+                "name": "Samarth Singh"
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><span class=\"mp_address_name\">Samarth Singh</span> &lt;<a href=\"mailto:samarthsinghyt@gmail.com\" class=\"mp_address_email\">samarthsinghyt@gmail.com</a>&gt;</span>",
+            "text": "\"Samarth Singh\" <samarthsinghyt@gmail.com>"
+          },
+          "from": {
+            "value": [
+              {
+                "address": "samarthsingh111223@gmail.com",
+                "name": "Samarth Singh"
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><span class=\"mp_address_name\">Samarth Singh</span> &lt;<a href=\"mailto:samarthsingh111223@gmail.com\" class=\"mp_address_email\">samarthsingh111223@gmail.com</a>&gt;</span>",
+            "text": "\"Samarth Singh\" <samarthsingh111223@gmail.com>"
+          },
+          "messageId": "<CACe9kDYjDuKxVtnLfdphQ3pKD_bDUyRuAkZ+g9u3M4KMS4iKHw@mail.gmail.com>"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages": {
+      "main": [
+        []
+      ]
+    },
+    "Message a model": {
+      "main": [
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        []
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Get a draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a draft": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "versionId": "e4e5072d-4330-44ca-9558-1ea01c4d9026",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "06fe1c96787c03b883c24143044547a11d5d5a31c30cb275d58c7b26fb42e201"
+  },
+  "nodeGroups": [],
+  "id": "SAb5NKamRc2gVhjz",
+  "tags": []
+}

@@ -1,0 +1,718 @@
+{
+  "name": "Agency Lead Follow-up zero code",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "ec82c8d5-2b49-42bb-aecb-cefeee0ea677",
+      "name": "Schedule Trigger - Daily 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -64,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SPREADSHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Leads"
+        },
+        "options": {
+          "outputFormatting": {
+            "values": {
+              "general": "FORMATTED_VALUE",
+              "date": "FORMATTED_STRING"
+            }
+          }
+        }
+      },
+      "id": "a3be0a5b-7c78-4420-bb67-723520d0a796",
+      "name": "Google Sheets - Fetch Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        176,
+        464
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sAzPgREPCusSapVj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.Email }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "rightValue": ""
+            },
+            {
+              "leftValue": "={{ ['new', 'contacted', 'awaiting reply'].includes(($json.Status || '').toLowerCase()) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              },
+              "rightValue": true
+            },
+            {
+              "leftValue": "={{ Number($json['Follow-up Count'] || 0) }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              },
+              "rightValue": 3
+            },
+            {
+              "leftValue": "={{ !$json['Follow-up Date'] || $json['Follow-up Date'] <= $now.toFormat('yyyy-MM-dd') }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              },
+              "rightValue": true
+            },
+            {
+              "leftValue": "={{ ($json['Last Contact Date'] || '').slice(0, 10) !== $now.toFormat('yyyy-MM-dd') }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              },
+              "rightValue": true
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2952cd67-6d94-4d98-82bd-1e153c3fcadb",
+      "name": "Filter - Due & Eligible Leads",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 1,
+        "filters": {
+          "q": "={{ 'from:' + $('Loop Over Items').item.json.Email }}"
+        }
+      },
+      "id": "8fdf3c68-4400-43aa-ab65-0d178c101566",
+      "name": "Gmail - Check Recent Reply",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        80
+      ],
+      "webhookId": "7bb3a5ae-db25-4a78-9ec7-35448714ff0d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7PVoyCBKi9XfwVXo",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "rightValue": "",
+              "id": "009ebbb9-161d-4110-89f8-d919f18e0b97"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "64ed30a3-63cf-4c75-bbd0-132fc4bbe28a",
+      "name": "If - Lead Replied?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SPREADSHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Email"
+          ],
+          "value": {
+            "Status": "Replied",
+            "Follow-up Date": "",
+            "Notes": "={{ 'Inbound reply detected on ' + $now.toFormat('yyyy-MM-dd HH:mm') + '. Sequence stopped.' }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "ba12eb2c-7fb8-49a6-b627-567fce874a91",
+      "name": "Google Sheets - Mark Replied",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        32
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sAzPgREPCusSapVj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "263d5b88-f211-4e7b-8cae-1653abf33d4e",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        624,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ Number($('Loop Over Items').item.json['Follow-up Count'] || 0) }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "rightValue": 0,
+                    "id": "e3af0a27-845c-44d0-877b-47bbd5938155"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ Number($('Loop Over Items').item.json['Follow-up Count'] || 0) }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "rightValue": 1,
+                    "id": "4aaae84b-435c-4218-aedf-ec0beff3cad3"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ Number($('Loop Over Items').item.json['Follow-up Count'] || 0) }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "rightValue": 2,
+                    "id": "3b3617e7-3e28-483f-9f26-b49118a5abd6"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "138cdb5d-3fe5-4b40-b42a-4d84fa6ea825",
+      "name": "Switch no. follow ups",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1296,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Loop Over Items').item.json.Email }}",
+        "subject": "={{ 'Quick question re: ' + $('Loop Over Items').item.json.Company + ' website & growth' }}",
+        "message": "={{ '<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#2d3748;line-height:1.6;\"><p>Hi ' + ($('Loop Over Items').item.json['Lead Name'] || 'there') + ',</p><p>I wanted to follow up briefly on my previous note regarding <strong>' + ($('Loop Over Items').item.json.Company || 'your company') + '</strong>\\'s online presence.</p><p>I took another look at your site and spotted 2 specific opportunities to improve mobile loading speed and conversion flow to capture more qualified inquiries.</p><p>Would you be open to a 3-minute video walkthrough where I share a few actionable design ideas we\\'ve used to lift conversions for similar brands?</p><p>Best regards,<br><strong>Alex Morgan</strong><br>Apex Design & Growth Studio</p><p style=\"font-size:11px;color:#888;margin-top:20px;\">P.S. If you prefer not to receive follow-ups, reply \"stop\" and I will remove you right away.</p></div>' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "fb1465dd-6274-41f0-8e3b-63ef048358ce",
+      "name": "1 Follow up (UX Audit)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        0
+      ],
+      "webhookId": "8287fd32-9a3d-4fa3-9006-d860965cc85e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7PVoyCBKi9XfwVXo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Loop Over Items').item.json.Email }}",
+        "subject": "={{ 'Idea for ' + $('Loop Over Items').item.json.Company + ' (+41% conversion case study)' }}",
+        "message": "={{ '<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#2d3748;line-height:1.6;\"><p>Hi ' + ($('Loop Over Items').item.json['Lead Name'] || 'there') + ',</p><p>I know you are likely busy at <strong>' + ($('Loop Over Items').item.json.Company || 'your company') + '</strong>, so I will keep this short.</p><p>We recently redesigned the service pages and booking funnel for a similar client in your space, which led to a <strong>41% increase in high-intent demo requests</strong> without increasing their ad spend.</p><p>Would you be opposed to a quick 10-minute screenshare this Thursday or Friday to take a look at the teardown?</p><p>Warm regards,<br><strong>Alex Morgan</strong><br>Apex Design & Growth Studio</p><p style=\"font-size:11px;color:#888;margin-top:20px;\">P.S. Reply \"stop\" to opt out.</p></div>' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "74a59d86-8206-4507-9421-952232239c21",
+      "name": "2 Follow up Case Study",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        192
+      ],
+      "webhookId": "af7fd704-d09b-40fc-bf92-c6705f1ca9ef",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7PVoyCBKi9XfwVXo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Loop Over Items').item.json.Email }}",
+        "subject": "={{ 'Permission to close your file for ' + $('Loop Over Items').item.json.Company + '?' }}",
+        "message": "={{ '<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#2d3748;line-height:1.6;\"><p>Hi ' + ($('Loop Over Items').item.json['Lead Name'] || 'there') + ',</p><p>I haven\\'t heard back, so I assume refreshing web design or digital marketing isn\\'t a priority for <strong>' + ($('Loop Over Items').item.json.Company || 'your company') + '</strong> right now (or you are simply swamped!).</p><p>Either way, completely understood. I\\'ll go ahead and close out your file on our end so I don\\'t clutter your inbox.</p><p>If growth priorities shift down the road, feel free to reach back out anytime.</p><p>Best regards,<br><strong>Alex Morgan</strong><br>Apex Design & Growth Studio</p><p style=\"font-size:11px;color:#888;margin-top:20px;\">This is our final follow-up. You will not receive further emails.</p></div>' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "9ba7a1b0-1dc5-4a72-9b59-c38e99b1b94c",
+      "name": "3 Follow up Break up",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        384
+      ],
+      "webhookId": "5f68736d-a51b-426c-b9cb-d0dd2da82d15",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7PVoyCBKi9XfwVXo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SPREADSHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Email"
+          ],
+          "value": {
+            "Status": "Awaiting Reply",
+            "Follow-up Count": "1",
+            "Last Contact Date": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+            "Follow-up Date": "={{ $today.plus({ days: 4 }).toFormat('yyyy-MM-dd') }}",
+            "Notes": "Sent Follow-up #1: UX Audit"
+          }
+        },
+        "options": {}
+      },
+      "id": "600b8eb2-a96d-4565-9320-a4538b61879b",
+      "name": "Google Sheets Record 1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        368
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sAzPgREPCusSapVj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SPREADSHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Email"
+          ],
+          "value": {
+            "Status": "Awaiting Reply",
+            "Follow-up Count": "2",
+            "Last Contact Date": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+            "Follow-up Date": "={{ $today.plus({ days: 7 }).toFormat('yyyy-MM-dd') }}",
+            "Notes": "Sent Follow-up #2: Case Study"
+          }
+        },
+        "options": {}
+      },
+      "id": "3b7c757d-9c5f-4518-b3fa-3a0e7214617c",
+      "name": "Google Sheets Record 2",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        560
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sAzPgREPCusSapVj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SPREADSHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Email"
+          ],
+          "value": {
+            "Status": "Sequence Completed",
+            "Follow-up Count": "3",
+            "Last Contact Date": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+            "Follow-up Date": "",
+            "Notes": "Sent Follow-up #3: Break-up email. Sequence completed."
+          }
+        },
+        "options": {}
+      },
+      "id": "237815a7-3572-4171-8e98-ec8a960f6b27",
+      "name": "Google Sheets Record 3",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        752
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sAzPgREPCusSapVj",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger - Daily 09:00": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Fetch Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Fetch Leads": {
+      "main": [
+        [
+          {
+            "node": "Filter - Due & Eligible Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter - Due & Eligible Leads": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Check Recent Reply": {
+      "main": [
+        [
+          {
+            "node": "If - Lead Replied?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Lead Replied?": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Mark Replied",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch no. follow ups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Mark Replied": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Gmail - Check Recent Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch no. follow ups": {
+      "main": [
+        [
+          {
+            "node": "1 Follow up (UX Audit)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "2 Follow up Case Study",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "3 Follow up Break up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1 Follow up (UX Audit)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Record 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2 Follow up Case Study": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Record 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3 Follow up Break up": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Record 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Record 1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Record 2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Record 3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "9d8ca6db-12d8-4415-9c7b-f9343806cc99",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "06fe1c96787c03b883c24143044547a11d5d5a31c30cb275d58c7b26fb42e201"
+  },
+  "nodeGroups": [],
+  "id": "YfYGtR9MzUSiSjg9",
+  "tags": []
+}

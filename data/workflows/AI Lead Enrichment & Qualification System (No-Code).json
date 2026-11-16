@@ -1,0 +1,1332 @@
+{
+  "name": "AI Lead Enrichment & Qualification System (No-Code)",
+  "nodes": [
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"lead_intent\":\"HIGH\",\"business_relevance\":\"HIGH\",\"automation_opportunity\":\"HIGH\",\"qualification\":\"HOT\",\"suggested_service\":\"AI Customer Support\",\"reasoning\":\"The company appears to have repetitive customer-facing operations that could potentially be automated.\",\"recommended_action\":\"Schedule discovery call\",\"confidence\":0.87}"
+      },
+      "id": "8e666979-64e9-4d53-b3b3-87d51ed55527",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1568,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "daedd573-4882-4d0d-b5a6-cbe0328e2cd8",
+      "name": "Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        384
+      ],
+      "webhookId": "640cf8c9-d4cf-4021-a3b6-157527388dae"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ ($json.body?.name || '').trim() }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": "",
+              "id": "b160e141-397e-462b-88e2-ca0c6f43bed5"
+            },
+            {
+              "leftValue": "={{ ($json.body?.email || '').trim() }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "@",
+              "id": "ad02c770-ac0e-4923-bc47-8c0a32f96e5f"
+            },
+            {
+              "leftValue": "={{ ($json.body?.company || '').trim() + ($json.body?.website || '').trim() }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": "",
+              "id": "b56d2c5b-d3e7-4de0-b08d-18cebc0c47c5"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "77a3fab1-b015-439a-85b8-557fa5708398",
+      "name": "Validate Required Fields",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify\n({ success: false, error: \"Validation failed: name, valid email, and company or website are required.\" })\n}}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "2b2f2daa-3a7c-48bb-98da-f2c66f889875",
+      "name": "Webhook Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        400,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "lead-id",
+              "name": "lead_id",
+              "type": "string",
+              "value": "={{ 'LEAD-' + $now.format('yyyy') + '-' + Math.floor(10000 + Math.random() * 90000) }}"
+            },
+            {
+              "id": "lead-timestamp",
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "id": "lead-name",
+              "name": "name",
+              "type": "string",
+              "value": "={{ ($json.body?.name || '').trim() }}"
+            },
+            {
+              "id": "lead-email",
+              "name": "email",
+              "type": "string",
+              "value": "={{ ($json.body?.email || '').trim().toLowerCase() }}"
+            },
+            {
+              "id": "lead-company",
+              "name": "company",
+              "type": "string",
+              "value": "={{ ($json.body?.company || '').trim() || ($json.body?.website ? $json.body.website.replace('https://','').replace('http://','').split('/')[0] : 'Unknown Company') }}"
+            },
+            {
+              "id": "lead-website",
+              "name": "website",
+              "type": "string",
+              "value": "={{ ($json.body?.website || '').trim() }}"
+            },
+            {
+              "id": "lead-phone",
+              "name": "phone",
+              "type": "string",
+              "value": "={{ ($json.body?.phone || 'Not provided').trim() }}"
+            },
+            {
+              "id": "lead-message",
+              "name": "message",
+              "type": "string",
+              "value": "={{ ($json.body?.message || 'No message provided').trim() }}"
+            },
+            {
+              "id": "lead-status",
+              "name": "status",
+              "type": "string",
+              "value": "NEW"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3e12cb15-d12d-4017-9f6c-a9f10ac764e8",
+      "name": "Normalize & Assign Lead ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.website }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "rightValue": "",
+              "id": "6cb4ab85-84e0-4010-a370-47e379bf7bc2"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d5098e60-0bd1-4d52-931f-8f502386afe3",
+      "name": "04",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.website }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 5
+            }
+          }
+        }
+      },
+      "id": "aa576bc9-1bd2-4be3-aab6-bb48b57ab7dd",
+      "name": "Fetch Company Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        224
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "page_title",
+              "cssSelector": "title"
+            },
+            {
+              "key": "company_description",
+              "cssSelector": "meta[name='description']",
+              "returnValue": "attribute",
+              "attribute": "content"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5addc10b-8121-49d3-bee0-0e67bae288e4",
+      "name": "Extract Website Info",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        224
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this incoming lead for our automation agency:\nContact Name: {{ $('Normalize & Assign Lead ID').item.json.name }}\nEmail: {{ $('Normalize & Assign Lead ID').item.json.email }}\nCompany: {{ $('Normalize & Assign Lead ID').item.json.company }}\nWebsite: {{ $('Normalize & Assign Lead ID').item.json.website }}\nClient Message: {{ $('Normalize & Assign Lead ID').item.json.message }}\n\nWebsite Enrichment Findings:\nPage Title: {{ $('Extract Website Info').item?.json?.page_title || 'Not Available' }}\nCompany Description: {{ $('Extract Website Info').item?.json?.company_description || 'Not Available' }}\n\nTasks:\n1. Identify lead_intent: [HIGH, MEDIUM, LOW, UNKNOWN]\n2. Identify business_relevance: [HIGH, MEDIUM, LOW, UNKNOWN]\n3. Identify automation_opportunity: [HIGH, MEDIUM, LOW, UNKNOWN]\n4. Identify preliminary qualification: [HOT, WARM, COLD, UNKNOWN]\n5. Suggest best service: [AI Customer Support, AI Email Automation, Lead Enrichment, CRM Automation, Content Automation, RAG Knowledge Assistant, Workflow Automation, Unknown]\n6. Provide short reasoning (1-2 sentences).\n7. Suggest recommended_action: [Contact immediately, Schedule discovery call, Send introductory email, Request more information, Nurture lead, No action]\n8. Assign confidence score between 0.00 and 1.00.\n\nReturn only valid JSON matching the schema.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert AI lead qualification agent for an automation agency. Use only verified facts. Always return strictly valid JSON matching the required schema."
+        }
+      },
+      "id": "d558f5ef-ed59-4639-91ab-0d1edf31f00e",
+      "name": "AI Lead Analysis",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1344,
+        288
+      ],
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "2afe8df1-f471-4727-b507-ae77ed77a044",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1296,
+        512
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "L2nV5Si6eNzXh22f",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output?.lead_intent }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "HIGH",
+                    "id": "004b60c7-ddd1-4718-9051-09e839377250"
+                  },
+                  {
+                    "leftValue": "={{ $json.output?.business_relevance }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "HIGH",
+                    "id": "9c7b6e79-58f5-47a1-b315-a4e394d17e19"
+                  },
+                  {
+                    "leftValue": "={{ $json.output?.automation_opportunity }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "HIGH",
+                    "id": "14ac3b2b-b755-468c-8d8a-926d92e9abab"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output?.business_relevance }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "LOW",
+                    "id": "1cb626a2-65e3-436b-b4b8-254f662d3202"
+                  },
+                  {
+                    "leftValue": "={{ $json.output?.automation_opportunity }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "LOW",
+                    "id": "1aa4c023-ea64-423b-925d-685928749b87"
+                  },
+                  {
+                    "leftValue": "={{ $json.output?.lead_intent }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "LOW",
+                    "id": "9d1a0002-7029-4b5e-ad75-6c8d2a0a868d"
+                  }
+                ],
+                "combinator": "or"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output?.automation_opportunity }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "MEDIUM",
+                    "id": "673c7a51-4048-4a97-8c56-5e64d0441fd3"
+                  },
+                  {
+                    "leftValue": "={{ $json.output?.automation_opportunity }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "HIGH",
+                    "id": "11ae26cd-32e8-4988-965c-7a39809e38d7"
+                  }
+                ],
+                "combinator": "or"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "UNKNOWN"
+        }
+      },
+      "id": "fdf8d2bf-9270-41a8-b60e-712f7d6fc920",
+      "name": "Route by Qualification Rules",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1696,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "q-val",
+              "name": "qualification",
+              "type": "string",
+              "value": "HOT"
+            },
+            {
+              "id": "q-emoji",
+              "name": "qualification_emoji",
+              "type": "string",
+              "value": "🔥"
+            },
+            {
+              "id": "q-rule",
+              "name": "qualification_reason",
+              "type": "string",
+              "value": "High intent, commercial relevance, and clear automation use case."
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "46faa8b0-037e-4c76-a8b5-c1b9bb17027e",
+      "name": "Tag HOT Lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1920,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "q-val",
+              "name": "qualification",
+              "type": "string",
+              "value": "COLD"
+            },
+            {
+              "id": "q-emoji",
+              "name": "qualification_emoji",
+              "type": "string",
+              "value": "❄️"
+            },
+            {
+              "id": "q-rule",
+              "name": "qualification_reason",
+              "type": "string",
+              "value": "Low intent, low relevance, or low automation feasibility."
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "4e172064-6ef0-4935-a666-834fc3f0fcc1",
+      "name": "Tag COLD Lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1920,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "q-val",
+              "name": "qualification",
+              "type": "string",
+              "value": "WARM"
+            },
+            {
+              "id": "q-emoji",
+              "name": "qualification_emoji",
+              "type": "string",
+              "value": "🌤️"
+            },
+            {
+              "id": "q-rule",
+              "name": "qualification_reason",
+              "type": "string",
+              "value": "Medium-to-high potential; discovery required to confirm scope."
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "cbc77a15-7391-49e9-b3de-00c4a7dd2b9a",
+      "name": "Tag WARM Lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1920,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "q-val",
+              "name": "qualification",
+              "type": "string",
+              "value": "UNKNOWN"
+            },
+            {
+              "id": "q-emoji",
+              "name": "qualification_emoji",
+              "type": "string",
+              "value": "❓"
+            },
+            {
+              "id": "q-rule",
+              "name": "qualification_reason",
+              "type": "string",
+              "value": "Insufficient data for automatic qualification. Marked for manual review."
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "8687a6ec-e4ea-4837-b9c1-8f215f30141d",
+      "name": "Tag UNKNOWN Lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1920,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "lead-id",
+              "name": "lead_id",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.lead_id }}"
+            },
+            {
+              "id": "lead-ts",
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.timestamp }}"
+            },
+            {
+              "id": "lead-name",
+              "name": "name",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.name }}"
+            },
+            {
+              "id": "lead-email",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.email }}"
+            },
+            {
+              "id": "lead-company",
+              "name": "company",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.company }}"
+            },
+            {
+              "id": "lead-website",
+              "name": "website",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.website }}"
+            },
+            {
+              "id": "lead-phone",
+              "name": "phone",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.phone }}"
+            },
+            {
+              "id": "lead-msg",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.message }}"
+            },
+            {
+              "id": "lead-desc",
+              "name": "company_description",
+              "type": "string",
+              "value": "={{ $('Extract Website Info').item?.json?.company_description || 'Not available' }}"
+            },
+            {
+              "id": "lead-intent",
+              "name": "lead_intent",
+              "type": "string",
+              "value": "={{ $json.output?.lead_intent || 'UNKNOWN' }}"
+            },
+            {
+              "id": "lead-rel",
+              "name": "business_relevance",
+              "type": "string",
+              "value": "={{ $json.output?.business_relevance || 'UNKNOWN' }}"
+            },
+            {
+              "id": "lead-opp",
+              "name": "automation_opportunity",
+              "type": "string",
+              "value": "={{ $json.output?.automation_opportunity || 'UNKNOWN' }}"
+            },
+            {
+              "id": "lead-qual",
+              "name": "qualification",
+              "type": "string",
+              "value": "={{ $json.qualification }}"
+            },
+            {
+              "id": "lead-svc",
+              "name": "suggested_service",
+              "type": "string",
+              "value": "={{ $json.output?.suggested_service || 'Workflow Automation' }}"
+            },
+            {
+              "id": "lead-reason",
+              "name": "reasoning",
+              "type": "string",
+              "value": "={{ $json.output?.reasoning || $json.qualification_reason }}"
+            },
+            {
+              "id": "lead-act",
+              "name": "recommended_action",
+              "type": "string",
+              "value": "={{ $json.output?.recommended_action || 'Review manually' }}"
+            },
+            {
+              "id": "lead-conf",
+              "name": "confidence",
+              "type": "string",
+              "value": "={{ Math.round(($json.output?.confidence || 0) * 100) }}%"
+            },
+            {
+              "id": "lead-stat",
+              "name": "status",
+              "type": "string",
+              "value": "NEW"
+            },
+            {
+              "id": "lead-name-cap",
+              "name": "Name",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.name }}"
+            },
+            {
+              "id": "lead-email-cap",
+              "name": "Email",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.email }}"
+            },
+            {
+              "id": "lead-role-cap",
+              "name": "Role",
+              "type": "string",
+              "value": "={{ $json.qualification + ' Lead' }}"
+            },
+            {
+              "id": "lead-company-cap",
+              "name": "Company",
+              "type": "string",
+              "value": "={{ $('Normalize & Assign Lead ID').item.json.company }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "de36572b-e575-41e8-97ee-b45d5b9cb47a",
+      "name": "Format Lead Record",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2144,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "cachedResultName": "n8n khela",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dBqppQQWNufPOI_k848Fis1PaRheoaJa-DhKa8XcfZ4/edit?usp=drivesdk",
+          "mode": "list",
+          "value": "1dBqppQQWNufPOI_k848Fis1PaRheoaJa-DhKa8XcfZ4"
+        },
+        "sheetName": {
+          "__rl": true,
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dBqppQQWNufPOI_k848Fis1PaRheoaJa-DhKa8XcfZ4/edit#gid=0",
+          "mode": "list",
+          "value": "gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Role",
+              "displayName": "Role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "error",
+              "displayName": "error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "qualification",
+              "displayName": "qualification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "qualification_emoji",
+              "displayName": "qualification_emoji",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "qualification_reason",
+              "displayName": "qualification_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company_description",
+              "displayName": "company_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead_intent",
+              "displayName": "lead_intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "business_relevance",
+              "displayName": "business_relevance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "automation_opportunity",
+              "displayName": "automation_opportunity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "suggested_service",
+              "displayName": "suggested_service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasoning",
+              "displayName": "reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "recommended_action",
+              "displayName": "recommended_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "638a10a3-74ed-4e6f-8416-0f6680efefed",
+      "name": "Save Lead to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2368,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sAzPgREPCusSapVj",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "U0BU2VCMR9B",
+          "mode": "list",
+          "cachedResultName": "n8n docker (@n8n_docker)"
+        },
+        "text": "={{ $json.qualification_emoji }} *NEW {{ $json.qualification }} LEAD*\n*Company:* {{ $('Normalize & Assign Lead ID').item.json.company }}\n*Contact:* {{ $('Normalize & Assign Lead ID').item.json.name }}\n*Email:* {{ $('Normalize & Assign Lead ID').item.json.email }}\n*Qualification:* {{ $json.qualification }}\n*Intent:* {{ $json.lead_intent || 'UNKNOWN' }}\n*Automation Opportunity:* {{ $json.automation_opportunity || 'UNKNOWN' }}\n*Suggested Service:* {{ $json.suggested_service || 'Workflow Automation' }}\n*Why:* {{ $json.reasoning }}\n*Recommended Action:* {{ $json.recommended_action || 'Review lead manually' }}\n*Confidence:* {{ $json.confidence }}\n*Lead ID:* `{{ $json.lead_id }}`",
+        "otherOptions": {}
+      },
+      "id": "6584f16f-f7ff-45b9-994f-c278189fea3b",
+      "name": "Notify Business Owner (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        2592,
+        192
+      ],
+      "webhookId": "e08b785b-c68a-4e19-91e4-70ff9464aaeb",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "zr7n4Xp7H8nNtwYz",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, lead_id: $(\"Normalize & Assign Lead ID\").item.json.lead_id, qualification: $('Format Lead Record').item.json.qualification, recommended_action: $('Format Lead Record').item.json.recommended_action || \"Schedule discovery call\", status: \"NEW\" }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "feede2b9-00d8-407e-a5f5-c40bd118eda6",
+      "name": "Webhook Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2816,
+        192
+      ]
+    }
+  ],
+  "pinData": {
+    "Lead Webhook": [
+      {
+        "json": {
+          "body": {
+            "company": "Logistics Pro",
+            "email": "contact@logisticspro.io",
+            "message": "We want an AI customer support bot to automate 400 daily inquiries.",
+            "name": "Daniel Miller",
+            "phone": "+1-555-0188",
+            "website": "https://logisticspro.io"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Lead Analysis",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Required Fields": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Assign Lead ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Webhook Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Assign Lead ID": {
+      "main": [
+        [
+          {
+            "node": "04",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04": {
+      "main": [
+        [
+          {
+            "node": "Fetch Company Website",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Lead Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Company Website": {
+      "main": [
+        [
+          {
+            "node": "Extract Website Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Website Info": {
+      "main": [
+        [
+          {
+            "node": "AI Lead Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Lead Analysis": {
+      "main": [
+        [
+          {
+            "node": "Route by Qualification Rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Lead Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Qualification Rules": {
+      "main": [
+        [
+          {
+            "node": "Tag HOT Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag COLD Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag WARM Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag UNKNOWN Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag HOT Lead": {
+      "main": [
+        [
+          {
+            "node": "Format Lead Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag COLD Lead": {
+      "main": [
+        [
+          {
+            "node": "Format Lead Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag WARM Lead": {
+      "main": [
+        [
+          {
+            "node": "Format Lead Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag UNKNOWN Lead": {
+      "main": [
+        [
+          {
+            "node": "Format Lead Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Lead Record": {
+      "main": [
+        [
+          {
+            "node": "Save Lead to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Lead to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Notify Business Owner (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Business Owner (Slack)": {
+      "main": [
+        [
+          {
+            "node": "Webhook Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "8d7e8c26-5d2c-461a-9647-97aae3512977",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "06fe1c96787c03b883c24143044547a11d5d5a31c30cb275d58c7b26fb42e201"
+  },
+  "nodeGroups": [],
+  "id": "WIXe4p0bimY1Xcks",
+  "tags": []
+}

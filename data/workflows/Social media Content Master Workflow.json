@@ -1,0 +1,267 @@
+{
+  "name": "Social media Content Master Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "ac47418b-61f3-4895-887d-b3bf67e97f1f",
+      "name": "When clicking \"Test workflow\"",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "blog_content",
+              "value": "Recent breakthroughs in electrogravitics and quantum vacuum fluctuations suggest potential non-reaction propulsion mechanisms. Researchers at the Advanced Propulsion Institute achieved measurable micro-Newton thrust using asymmetrical high-voltage capacitor arrays in high vacuum conditions."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0698c87e-b41f-4849-be64-ddf94c0a9f4f",
+      "name": "1. Topic / Blog Gen",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        224,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "397501d9-5dcb-41d1-a7c4-3ffc700a956a",
+      "name": "2. Merge Node",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { platform: 'Twitter' } },\n  { json: { platform: 'LinkedIn' } },\n  { json: { platform: 'Facebook' } },\n  { json: { platform: 'YouTube' } }\n];"
+      },
+      "id": "a0c7887b-7b89-49c0-9245-0f8e518b3cf6",
+      "name": "Platform Targets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "prompt": "=Source Content:\n{{ $json.blog_content }}\n\nTarget Platform: {{ $json.platform }}",
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "7015b335-ed91-4a06-aa81-1f089106a45e",
+      "name": "3. OpenAI Generator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        672,
+        288
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "JmLouTAsODafkJpK",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.platform }}"
+      },
+      "id": "06382fb3-25ae-4720-aef6-550f6883ae07",
+      "name": "4. Content Switch Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        896,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "text": "={{ JSON.parse($json.message.content).twitter_thread.join('\\n\\n') }}",
+        "additionalFields": {}
+      },
+      "id": "0811400e-bf71-431f-9364-5512176be33f",
+      "name": "5. X (Twitter) Node",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "person": "me",
+        "text": "={{ JSON.parse($json.message.content).linkedin_post }}",
+        "additionalFields": {}
+      },
+      "id": "7e00376a-314a-4e0f-b9d0-9ed1bc7ef506",
+      "name": "6. LinkedIn Node",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v23.0/me/accounts",
+        "options": {}
+      },
+      "id": "edbcb88a-b3e8-4087-a8bc-8213818ddca1",
+      "name": "7. Facebook Page Node",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1120,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "title": "=YouTube Script: Anti-Gravity Physics"
+      },
+      "id": "ba020cd1-9880-446b-b2a2-82dcc7312089",
+      "name": "8. YouTube Script Node",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        576
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking \"Test workflow\"": {
+      "main": [
+        [
+          {
+            "node": "1. Topic / Blog Gen",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Platform Targets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Topic / Blog Gen": {
+      "main": [
+        [
+          {
+            "node": "2. Merge Node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Merge Node": {
+      "main": [
+        [
+          {
+            "node": "3. OpenAI Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Platform Targets": {
+      "main": [
+        [
+          {
+            "node": "2. Merge Node",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "3. OpenAI Generator": {
+      "main": [
+        [
+          {
+            "node": "4. Content Switch Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Content Switch Router": {
+      "main": [
+        [
+          {
+            "node": "5. X (Twitter) Node",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "6. LinkedIn Node",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "7. Facebook Page Node",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "8. YouTube Script Node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "efe103ce-ff18-4ae0-a202-71b3199509fa",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "06fe1c96787c03b883c24143044547a11d5d5a31c30cb275d58c7b26fb42e201"
+  },
+  "nodeGroups": [],
+  "id": "IsGFFl3QxX0VMDO2",
+  "tags": []
+}

@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Vercel build & cache
+.vercel
+
+# Temporary / Scratch
+scratch/
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+.vercel
