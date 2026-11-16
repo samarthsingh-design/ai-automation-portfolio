@@ -1513,8 +1513,25 @@
   // Initial responsive framing
   updateResponsiveCloud();
 
-  // Window resize handler
-  window.addEventListener('resize', updateResponsiveCloud);
+  // Window resize handler: ignore vertical-only resize events triggered by mobile URL bar collapsing/showing
+  let lastWidth = window.innerWidth;
+  window.addEventListener('resize', () => {
+    const currentWidth = window.innerWidth;
+    // On mobile devices, scrolling causes the browser address bar to slide,
+    // firing window 'resize' with only height changes. We only re-run Three.js
+    // projection/buffer reallocation when width changes (orientation change or desktop resize).
+    if (Math.abs(currentWidth - lastWidth) > 8) {
+      lastWidth = currentWidth;
+      updateResponsiveCloud();
+    }
+  });
+
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      lastWidth = window.innerWidth;
+      updateResponsiveCloud();
+    }, 150);
+  });
 
   // Start animation loop
   animate();
