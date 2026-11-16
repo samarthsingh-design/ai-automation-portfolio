@@ -1039,6 +1039,12 @@
     const minScale = options.minScale || 0.6;
     const maxScale = options.maxScale || 2.8;
 
+    // Multi-touch tracking map: pointerId -> { clientX, clientY }
+    const activePointers = new Map();
+    let pinchStartDist = 0;
+    let pinchStartScale = 1.0;
+    let pinchCenterStage = { x: 0, y: 0 };
+
     function applyTransform() {
       stageEl.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
       if (zoomLabelEl) {
@@ -1050,6 +1056,9 @@
       scale = 1.0;
       panX = 0;
       panY = 0;
+      activePointers.clear();
+      isDragging = false;
+      pinchStartDist = 0;
       applyTransform();
     }
 
@@ -1059,44 +1068,122 @@
       applyTransform();
     }
 
-    // Pointer events for smooth drag
+    // Pointer events for smooth drag and pinch-to-zoom
     viewportEl.addEventListener('pointerdown', (e) => {
-      // Don't drag if clicking an action button
-      if (e.target.closest('button') || e.target.closest('.canvas-topbar')) return;
-      isDragging = true;
-      hasMoved = false;
-      startX = e.clientX - panX;
-      startY = e.clientY - panY;
-      viewportEl.setPointerCapture(e.pointerId);
+      // Don't drag if clicking an action button or header control
+      if (e.target.closest('button') || e.target.closest('.canvas-topbar') || e.target.closest('.modal-header')) return;
+
+      try {
+        viewportEl.setPointerCapture(e.pointerId);
+      } catch (_) {}
+
+      activePointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
+      if (activePointers.size === 1) {
+        isDragging = true;
+        hasMoved = false;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+      } else if (activePointers.size === 2) {
+        // Switch to pinch-to-zoom
+        const pts = Array.from(activePointers.values());
+        const p1 = pts[0];
+        const p2 = pts[1];
+        pinchStartDist = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY) || 1;
+        pinchStartScale = scale;
+
+        const rect = viewportEl.getBoundingClientRect();
+        const centerVx = ((p1.clientX + p2.clientX) / 2) - rect.left;
+        const centerVy = ((p1.clientY + p2.clientY) / 2) - rect.top;
+
+        pinchCenterStage = {
+          x: (centerVx - panX) / (scale || 1),
+          y: (centerVy - panY) / (scale || 1)
+        };
+      }
     });
 
     viewportEl.addEventListener('pointermove', (e) => {
-      if (!isDragging) return;
-      hasMoved = true;
-      panX = e.clientX - startX;
-      panY = e.clientY - startY;
-      applyTransform();
+      if (!activePointers.has(e.pointerId)) return;
+      activePointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
+      if (activePointers.size === 1 && isDragging) {
+        hasMoved = true;
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        applyTransform();
+      } else if (activePointers.size >= 2) {
+        hasMoved = true;
+        const pts = Array.from(activePointers.values());
+        const p1 = pts[0];
+        const p2 = pts[1];
+        const currentDist = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
+
+        if (pinchStartDist > 0 && currentDist > 0) {
+          const ratio = currentDist / pinchStartDist;
+          const targetScale = Math.max(minScale, Math.min(maxScale, pinchStartScale * ratio));
+
+          const rect = viewportEl.getBoundingClientRect();
+          const currCenterVx = ((p1.clientX + p2.clientX) / 2) - rect.left;
+          const currCenterVy = ((p1.clientY + p2.clientY) / 2) - rect.top;
+
+          scale = parseFloat(targetScale.toFixed(3));
+          panX = currCenterVx - pinchCenterStage.x * scale;
+          panY = currCenterVy - pinchCenterStage.y * scale;
+          applyTransform();
+        }
+      }
     });
 
     const stopDrag = (e) => {
-      if (isDragging) {
+      try {
+        viewportEl.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+
+      activePointers.delete(e.pointerId);
+
+      if (activePointers.size === 1) {
+        // Seamlessly continue dragging with remaining finger without jumping
+        const remaining = activePointers.values().next().value;
+        startX = remaining.clientX - panX;
+        startY = remaining.clientY - panY;
+        isDragging = true;
+        pinchStartDist = 0;
+      } else if (activePointers.size === 0) {
         isDragging = false;
-        try {
-          viewportEl.releasePointerCapture(e.pointerId);
-        } catch (_) {}
+        pinchStartDist = 0;
       }
     };
 
     viewportEl.addEventListener('pointerup', stopDrag);
     viewportEl.addEventListener('pointercancel', stopDrag);
+    viewportEl.addEventListener('lostpointercapture', stopDrag);
 
-    // Mouse wheel zoom (prevent page scroll when hovering canvas)
+    // Prevent default touch gestures on multi-touch
+    viewportEl.addEventListener('touchstart', (e) => {
+      if (e.target.closest('button')) return;
+      if (e.cancelable && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    // Mouse wheel zoom centered on cursor
     viewportEl.addEventListener('wheel', (e) => {
       e.preventDefault();
+      const rect = viewportEl.getBoundingClientRect();
+      const mouseVx = e.clientX - rect.left;
+      const mouseVy = e.clientY - rect.top;
+      const stageX = (mouseVx - panX) / (scale || 1);
+      const stageY = (mouseVy - panY) / (scale || 1);
+
       const zoomFactor = e.deltaY < 0 ? 0.12 : -0.12;
-      const newScale = Math.max(minScale, Math.min(maxScale, scale + zoomFactor));
-      scale = parseFloat(newScale.toFixed(2));
-      applyTransform();
+      const newScale = Math.max(minScale, Math.min(maxScale, parseFloat((scale + zoomFactor).toFixed(2))));
+      if (newScale !== scale) {
+        scale = newScale;
+        panX = mouseVx - stageX * scale;
+        panY = mouseVy - stageY * scale;
+        applyTransform();
+      }
     }, { passive: false });
 
     // Double click to reset
