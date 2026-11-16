@@ -965,9 +965,9 @@
     "badge": "ACTIVE IN N8N",
     "title": "AI EMAIL DRAFTER & HUMAN-IN-THE-LOOP TRIAGE",
     "img": "images/workflow-email-drafter.png",
-    "desc": "Production n8n email automation system. Triggers on incoming unread emails via Gmail Trigger, parses context with an autonomous AI Agent (OpenRouter LLM), runs custom JavaScript code for intent triage, generates HTML drafts, and pushes interactive Approve/Disapprove buttons directly into Slack / Telegram. Once approved, it executes the Gmail REST API to dispatch the message.",
-    "howItWorks": "Production n8n email automation system. Triggers on incoming unread emails via Gmail Trigger, parses context with an autonomous AI Agent (OpenRouter LLM), runs custom JavaScript code for intent triage, generates HTML drafts, and pushes interactive Approve/Disapprove buttons directly into Slack / Telegram. Once approved, it executes the Gmail REST API to dispatch the message.",
-    "problemSolved": "Eliminates hours of manual inbox triage and delayed customer replies. The AI agent categorizes urgency and pre-drafts contextual replies, giving team members 1-click Slack/Telegram approval control without having to write emails from scratch."
+    "desc": "Automatically reads incoming emails, understands what the customer is asking using AI, and writes a complete, professional response draft. Before anything is sent, it delivers a preview to your team's Slack or Telegram with a simple 'Approve' or 'Edit' button—giving you full control in just one click.",
+    "howItWorks": "Automatically reads incoming emails, understands what the customer is asking using AI, and writes a complete, professional response draft. Before anything is sent, it delivers a preview to your team's Slack or Telegram with a simple 'Approve' or 'Edit' button—giving you full control in just one click.",
+    "problemSolved": "Saves business owners and support teams 2–3 hours every day spent answering emails. Customers get fast, well-written replies without the team having to type out the same responses from scratch or worry about AI sending mistakes."
   },
   {
     "idx": 1,
@@ -976,9 +976,9 @@
     "badge": "ACTIVE IN N8N",
     "title": "AI INBOUND LEAD QUALIFICATION & ENRICHMENT ENGINE",
     "img": "images/workflow-lead-qualification.png",
-    "desc": "Automated inbound lead processing system. Ingests form payloads via Lead Webhook, validates required fields, scrapes company websites via HTTP requests and HTML metadata extraction, and uses Google Gemini with Structured Output. Routes into 4 tiers (HOT 🔥, WARM 🌤️, COLD ❄️, UNKNOWN ❓), logs formatted records to Google Sheets, and alerts Slack.",
-    "howItWorks": "Automated inbound lead processing system. Ingests form payloads via Lead Webhook, validates required fields, scrapes company websites via HTTP requests and HTML metadata extraction, and uses Google Gemini with Structured Output. Routes into 4 tiers (HOT 🔥, WARM 🌤️, COLD ❄️, UNKNOWN ❓), logs formatted records to Google Sheets, and alerts Slack.",
-    "problemSolved": "Stops high-value inbound leads from going cold. Eliminates manual prospect research by scraping company domains, scoring ICP fit with Gemini AI in seconds, and routing hot deals straight to sales reps before competitors reply."
+    "desc": "Whenever someone fills out a contact form on your website, this system instantly visits their company website, gathers background information, and uses AI to see if they are an ideal client. It automatically sorts leads into Hot, Warm, or Cold, saves their profile into Google Sheets, and sends an urgent notification to your sales team.",
+    "howItWorks": "Whenever someone fills out a contact form on your website, this system instantly visits their company website, gathers background information, and uses AI to see if they are an ideal client. It automatically sorts leads into Hot, Warm, or Cold, saves their profile into Google Sheets, and sends an urgent notification to your sales team.",
+    "problemSolved": "Stops good business leads from slipping away. Sales reps no longer have to spend 20 minutes manually researching every company that contacts them—hot leads get contacted within minutes instead of hours."
   },
   {
     "idx": 2,
@@ -987,9 +987,9 @@
     "badge": "ACTIVE IN N8N",
     "title": "AUTONOMOUS B2B LEAD MAKING & INBOX REPLY WATCHER",
     "img": "images/workflow-lead-nurturing.png",
-    "desc": "Autonomous sales engine running on a weekday scheduled at (Daily 09:00). Fetches due leads from Google Sheets, loops through batches, actively scans Gmail threads for prospect replies to automatically update CRM status, or executes a multi-stage personalized HTML drip sequence (UX Audit, Case Study, Break-up Email) while updating Google Sheets timestamps.",
-    "howItWorks": "Autonomous sales engine running on a weekday scheduled at (Daily 09:00). Fetches due leads from Google Sheets, loops through batches, actively scans Gmail threads for prospect replies to automatically update CRM status, or executes a multi-stage personalized HTML drip sequence (UX Audit, Case Study, Break-up Email) while updating Google Sheets timestamps.",
-    "problemSolved": "Solves tedious follow-up management and awkward reply overlap. Automatically runs personalized multi-touch drip campaigns and monitors inboxes for replies—instantly halting outreach the moment a prospect responds."
+    "desc": "Runs daily follow-up email campaigns automatically. It sends personalized, step-by-step follow-ups to potential clients and constantly watches your inbox. The moment a client replies, the automation immediately pauses follow-ups and alerts you so you can jump in and close the deal.",
+    "howItWorks": "Runs daily follow-up email campaigns automatically. It sends personalized, step-by-step follow-ups to potential clients and constantly watches your inbox. The moment a client replies, the automation immediately pauses follow-ups and alerts you so you can jump in and close the deal.",
+    "problemSolved": "Solves the hassle of remembering to follow up with dozens of potential clients. It also prevents the common mistake of accidentally sending automated follow-up emails to someone who has already replied."
   },
   {
     "idx": 3,
@@ -998,9 +998,9 @@
     "badge": "ACTIVE IN N8N",
     "title": "ENTERPRISE RAG KNOWLEDGE PIPELINE & SUPPORT CHATBOT",
     "img": "images/workflow-rag-chatbot.png",
-    "desc": "Dual-pipeline Retrieval-Augmented Generation (RAG) system. Ingestion pipeline triggers on new Google Drive files, extracts text with Default Data Loader, chunks passages using Recursive Character Text Splitter, and embeds vectors into Pinecone Vector Store with Google Gemini. Chatbot pipeline receives user queries and leverages an AI Agent with Pinecone retrieval tool for hallucination-free support answers.",
-    "howItWorks": "Dual-pipeline Retrieval-Augmented Generation (RAG) system. Ingestion pipeline triggers on new Google Drive files, extracts text with Default Data Loader, chunks passages using Recursive Character Text Splitter, and embeds vectors into Pinecone Vector Store with Google Gemini. Chatbot pipeline receives user queries and leverages an AI Agent with Pinecone retrieval tool for hallucination-free support answers.",
-    "problemSolved": "Prevents customer support teams from drowning in repetitive tickets and outdated documentation. Automatically indexes private company Google Drive docs into Pinecone and serves instant, source-verified 24/7 AI answers with zero hallucination."
+    "desc": "An intelligent 24/7 assistant that reads your company's Google Docs and product guides. When a customer or team member asks a question, the AI finds the exact right information from your private documents and answers accurately—citing its sources without making things up.",
+    "howItWorks": "An intelligent 24/7 assistant that reads your company's Google Docs and product guides. When a customer or team member asks a question, the AI finds the exact right information from your private documents and answers accurately—citing its sources without making things up.",
+    "problemSolved": "Stops your support team from answering the exact same customer questions over and over again. Customers get instant, 24/7 answers based strictly on your company's verified information, freeing staff for high-value tasks."
   },
   {
     "idx": 4,
@@ -1009,9 +1009,9 @@
     "badge": "ACTIVE IN N8N",
     "title": "MULTI-SOURCE AI TECH NEWS & REEL CONCEPT GENERATOR",
     "img": "images/workflow-news-reel-notion.png",
-    "desc": "Scheduled content automation monitoring 5 parallel tech feeds (TechCrunch AI, Hugging Face Blog, GitHub Blog, OpenAI News, Hacker News). Merges streams, normalizes metadata, removes duplicate URLs, ranks top stories using custom JavaScript, generates high-engagement short-form video hooks & scripts via OpenRouter AI Model, and saves structured content boards directly to Notion.",
-    "howItWorks": "Scheduled content automation monitoring 5 parallel tech feeds (TechCrunch AI, Hugging Face Blog, GitHub Blog, OpenAI News, Hacker News). Merges streams, normalizes metadata, removes duplicate URLs, ranks top stories using custom JavaScript, generates high-engagement short-form video hooks & scripts via OpenRouter AI Model, and saves structured content boards directly to Notion.",
-    "problemSolved": "Removes 10+ weekly hours spent manually scouring tech publications and brainstorming video concepts. Aggregates and ranks the top stories across 5 tech feeds, generates viral short-form video scripts, and organizes ready-to-record boards in Notion."
+    "desc": "Automatically scans the top technology websites and news feeds every morning, removes duplicate articles, and picks the most exciting stories. Then, it uses AI to write ready-to-record short video scripts and social media hooks, organizing everything into a clean Notion board.",
+    "howItWorks": "Automatically scans the top technology websites and news feeds every morning, removes duplicate articles, and picks the most exciting stories. Then, it uses AI to write ready-to-record short video scripts and social media hooks, organizing everything into a clean Notion board.",
+    "problemSolved": "Eliminates the 5–10 hours each week creators and marketing teams spend searching for news and brainstorming content ideas. Gives you a daily list of proven, high-performing video concepts ready to record."
   },
   {
     "idx": 5,
@@ -1020,9 +1020,9 @@
     "badge": "ACTIVE IN N8N",
     "title": "MULTI-SHEET ORDER FULFILLMENT & NOTIFICATION ROUTER",
     "img": "images/workflow-order-routing-slack.png",
-    "desc": "Automated order reconciliation and fulfillment router. Concurrently pulls transactional data from multiple Google Sheets (sheet1 & sheet2), merges datasets on matching keys, cleanses fields, and routes through a 4-way rule-based Switch (Pending, Processing, Refunded, Cancelled) with automated deduplication, batch aggregation, and targeted email & Slack notification alerts.",
-    "howItWorks": "Automated order reconciliation and fulfillment router. Concurrently pulls transactional data from multiple Google Sheets (sheet1 & sheet2), merges datasets on matching keys, cleanses fields, and routes through a 4-way rule-based Switch (Pending, Processing, Refunded, Cancelled) with automated deduplication, batch aggregation, and targeted email & Slack notification alerts.",
-    "problemSolved": "Eliminates fulfillment bottlenecks, missed shipments, and data errors across disconnected spreadsheets. Automatically reconciles records from multiple Google Sheets, manages status-based routing, and triggers real-time Slack/email fulfillment alerts."
+    "desc": "Connects customer orders across different Google Sheets, matches order details automatically, and cleans up the data. It then sorts orders into clear stages—Pending, Processing, Refunded, or Cancelled—and instantly notifies the packing team on Slack and the customer via email.",
+    "howItWorks": "Connects customer orders across different Google Sheets, matches order details automatically, and cleans up the data. It then sorts orders into clear stages—Pending, Processing, Refunded, or Cancelled—and instantly notifies the packing team on Slack and the customer via email.",
+    "problemSolved": "Eliminates shipping delays, human data-entry mistakes, and confusion caused by managing orders across multiple messy spreadsheets. Orders get processed faster, and customers stay updated automatically."
   }
 ];
 
