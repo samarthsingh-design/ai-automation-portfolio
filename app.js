@@ -965,58 +965,64 @@
     "badge": "ACTIVE IN N8N",
     "title": "AI EMAIL DRAFTER & HUMAN-IN-THE-LOOP TRIAGE",
     "img": "images/workflow-email-drafter.png",
-    "desc": "Autonomous email operations pipeline in n8n. Ingests business emails, classifies urgency and intent with LangChain AI agents, runs custom JavaScript validation, dispatches approval cards to Slack/Telegram, and executes drafts via Gmail API.",
-    "howItWorks": "This workflow automates enterprise email operations by detecting incoming messages through real-time Gmail webhooks and scheduled cron sweeps. The incoming email and thread history are analyzed by a LangChain AI Agent running Claude 3.5 / GPT-4o via OpenRouter, which classifies customer intent, extracts context, and drafts a tailored, professional response. Before any reply is dispatched, the system sends an interactive approval card to a private Slack or Telegram channel, enabling team members to review, edit, or approve the draft with a single click. Once confirmed, the email is automatically sent via the Gmail API and logged to the central database, reducing support response times by 80% while maintaining complete human oversight."
+    "desc": "Production n8n email automation system. Triggers on incoming unread emails via Gmail Trigger, parses context with an autonomous AI Agent (OpenRouter LLM), runs custom JavaScript code for intent triage, generates HTML drafts, and pushes interactive Approve/Disapprove buttons directly into Slack / Telegram. Once approved, it executes the Gmail REST API to dispatch the message.",
+    "howItWorks": "Production n8n email automation system. Triggers on incoming unread emails via Gmail Trigger, parses context with an autonomous AI Agent (OpenRouter LLM), runs custom JavaScript code for intent triage, generates HTML drafts, and pushes interactive Approve/Disapprove buttons directly into Slack / Telegram. Once approved, it executes the Gmail REST API to dispatch the message.",
+    "problemSolved": "Eliminates hours of manual inbox triage and delayed customer replies. The AI agent categorizes urgency and pre-drafts contextual replies, giving team members 1-click Slack/Telegram approval control without having to write emails from scratch."
   },
   {
     "idx": 1,
     "slug": "Workflows / ai-lead-qualification",
-    "nodesCount": "15 NODES",
+    "nodesCount": "18 NODES",
     "badge": "ACTIVE IN N8N",
-    "title": "AI INBOUND LEAD QUALIFICATION ENGINE",
+    "title": "AI INBOUND LEAD QUALIFICATION & ENRICHMENT ENGINE",
     "img": "images/workflow-lead-qualification.png",
-    "desc": "Real-time inbound lead enrichment and routing engine. Listens for form submissions, enriches domains with Apollo/Hunter APIs, scores Ideal Customer Profile fit using Gemini 2.0, and routes qualified deals into HubSpot with instant Slack SDR alerts.",
-    "howItWorks": "This pipeline instantaneously qualifies inbound leads the moment a prospect submits a web form or fires a CRM event. The system extracts the prospect's email and company domain, queries Apollo and Hunter APIs for enrichment data, and scrapes corporate website details. A Google Gemini 2.0 Flash reasoning engine compares the prospect against Ideal Customer Profile (ICP) criteria, assigning a deterministic qualification score (1\u2013100) and synthesizing personalized sales intelligence notes. Qualified enterprise leads are immediately synced to HubSpot CRM with auto-assigned sales reps and high-priority Slack alerts, while lower-priority leads enter automated nurture tracks, eliminating manual lead sorting entirely."
+    "desc": "Automated inbound lead processing system. Ingests form payloads via Lead Webhook, validates required fields, scrapes company websites via HTTP requests and HTML metadata extraction, and uses Google Gemini with Structured Output. Routes into 4 tiers (HOT 🔥, WARM 🌤️, COLD ❄️, UNKNOWN ❓), logs formatted records to Google Sheets, and alerts Slack.",
+    "howItWorks": "Automated inbound lead processing system. Ingests form payloads via Lead Webhook, validates required fields, scrapes company websites via HTTP requests and HTML metadata extraction, and uses Google Gemini with Structured Output. Routes into 4 tiers (HOT 🔥, WARM 🌤️, COLD ❄️, UNKNOWN ❓), logs formatted records to Google Sheets, and alerts Slack.",
+    "problemSolved": "Stops high-value inbound leads from going cold. Eliminates manual prospect research by scraping company domains, scoring ICP fit with Gemini AI in seconds, and routing hot deals straight to sales reps before competitors reply."
   },
   {
     "idx": 2,
     "slug": "Workflows / b2b-lead-nurture-watcher",
-    "nodesCount": "12 NODES",
+    "nodesCount": "14 NODES",
     "badge": "ACTIVE IN N8N",
-    "title": "AUTONOMOUS B2B LEAD NURTURING & REPLY WATCHER",
+    "title": "AUTONOMOUS B2B LEAD MAKING & INBOX REPLY WATCHER",
     "img": "images/workflow-lead-nurturing.png",
-    "desc": "Scheduled nurturing engine with real-time response detection. Executes drip sequences, analyzes prospect email sentiment via AI to detect positive interest or objections, auto-pauses campaigns upon reply, and notifies account executives.",
-    "howItWorks": "This sales automation system coordinates multi-touch cold email campaigns while continuously monitoring prospect responses. Operating on an automated schedule, the workflow queries active CRM deals to send staggered, personalized follow-ups. Meanwhile, an inbound Gmail push listener captures all incoming replies and passes them to an AI sentiment engine to detect intent, interest, or objections. If positive buying interest or a meeting request is detected, the workflow instantly pauses follow-up emails, tags the lead as 'Hot' in the CRM, and alerts the sales team with a pre-drafted calendar invite link to lock in discovery calls without delay."
+    "desc": "Autonomous sales engine running on a weekday scheduled at (Daily 09:00). Fetches due leads from Google Sheets, loops through batches, actively scans Gmail threads for prospect replies to automatically update CRM status, or executes a multi-stage personalized HTML drip sequence (UX Audit, Case Study, Break-up Email) while updating Google Sheets timestamps.",
+    "howItWorks": "Autonomous sales engine running on a weekday scheduled at (Daily 09:00). Fetches due leads from Google Sheets, loops through batches, actively scans Gmail threads for prospect replies to automatically update CRM status, or executes a multi-stage personalized HTML drip sequence (UX Audit, Case Study, Break-up Email) while updating Google Sheets timestamps.",
+    "problemSolved": "Solves tedious follow-up management and awkward reply overlap. Automatically runs personalized multi-touch drip campaigns and monitors inboxes for replies—instantly halting outreach the moment a prospect responds."
   },
   {
     "idx": 3,
     "slug": "Workflows / enterprise-rag-support",
-    "nodesCount": "10 NODES",
+    "nodesCount": "11 NODES",
     "badge": "ACTIVE IN N8N",
-    "title": "ENTERPRISE RAG KNOWLEDGE PIPELINE & CUSTOMER SUPPORT BOT",
+    "title": "ENTERPRISE RAG KNOWLEDGE PIPELINE & SUPPORT CHATBOT",
     "img": "images/workflow-rag-chatbot.png",
-    "desc": "Retrieval-Augmented Generation customer service bot. Vectorizes enterprise documentation into pgvector/Pinecone, uses Claude 3.5 Sonnet to craft verified answers with source citations, and escalates complex queries to human agents via Zendesk.",
-    "howItWorks": "This system connects private company knowledge bases directly to customer support channels through a Retrieval-Augmented Generation (RAG) architecture. When a user submits an inquiry via web chat, Telegram, or email, the query is converted into vector embeddings and matched against technical documentation stored in Supabase pgvector. A Claude 3.5 Sonnet agent processes the retrieved context to formulate an accurate, hallucination-free answer with cited source links. If an issue requires account-level actions or manual escalation, the workflow automatically generates a prioritized support ticket and notifies on-call staff."
+    "desc": "Dual-pipeline Retrieval-Augmented Generation (RAG) system. Ingestion pipeline triggers on new Google Drive files, extracts text with Default Data Loader, chunks passages using Recursive Character Text Splitter, and embeds vectors into Pinecone Vector Store with Google Gemini. Chatbot pipeline receives user queries and leverages an AI Agent with Pinecone retrieval tool for hallucination-free support answers.",
+    "howItWorks": "Dual-pipeline Retrieval-Augmented Generation (RAG) system. Ingestion pipeline triggers on new Google Drive files, extracts text with Default Data Loader, chunks passages using Recursive Character Text Splitter, and embeds vectors into Pinecone Vector Store with Google Gemini. Chatbot pipeline receives user queries and leverages an AI Agent with Pinecone retrieval tool for hallucination-free support answers.",
+    "problemSolved": "Prevents customer support teams from drowning in repetitive tickets and outdated documentation. Automatically indexes private company Google Drive docs into Pinecone and serves instant, source-verified 24/7 AI answers with zero hallucination."
   },
   {
     "idx": 4,
     "slug": "Workflows / ai-news-video-generator",
-    "nodesCount": "10 NODES",
+    "nodesCount": "15 NODES",
     "badge": "ACTIVE IN N8N",
-    "title": "MULTI-SOURCE AI TECH NEWS CURATOR & REEL GENERATOR",
+    "title": "MULTI-SOURCE AI TECH NEWS & REEL CONCEPT GENERATOR",
     "img": "images/workflow-news-reel-notion.png",
-    "desc": "End-to-end automated multimedia production pipeline. Scrapes top tech publications and RSS feeds daily, synthesizes short-form video scripts with Claude 3.5, generates synthetic voiceovers via ElevenLabs, and triggers cloud rendering in Shotstack.",
-    "howItWorks": "This content automation engine aggregates daily technology news from top RSS feeds, Hacker News, and Twitter trends. An AI curation agent filters out noise, selects the highest-impact stories, and writes a crisp 60-second video script structured with a strong hook and key insights. The script is sent to ElevenLabs for lifelike voice narration, while the workflow fetches matching B-roll footage via the Pexels API and assembles the video using Shotstack cloud rendering. The finalized MP4 video, thumbnail, and social captions are automatically scheduled and posted across YouTube Shorts, Instagram Reels, and LinkedIn without manual editing."
+    "desc": "Scheduled content automation monitoring 5 parallel tech feeds (TechCrunch AI, Hugging Face Blog, GitHub Blog, OpenAI News, Hacker News). Merges streams, normalizes metadata, removes duplicate URLs, ranks top stories using custom JavaScript, generates high-engagement short-form video hooks & scripts via OpenRouter AI Model, and saves structured content boards directly to Notion.",
+    "howItWorks": "Scheduled content automation monitoring 5 parallel tech feeds (TechCrunch AI, Hugging Face Blog, GitHub Blog, OpenAI News, Hacker News). Merges streams, normalizes metadata, removes duplicate URLs, ranks top stories using custom JavaScript, generates high-engagement short-form video hooks & scripts via OpenRouter AI Model, and saves structured content boards directly to Notion.",
+    "problemSolved": "Removes 10+ weekly hours spent manually scouring tech publications and brainstorming video concepts. Aggregates and ranks the top stories across 5 tech feeds, generates viral short-form video scripts, and organizes ready-to-record boards in Notion."
   },
   {
     "idx": 5,
     "slug": "Workflows / order-fulfillment-router",
-    "nodesCount": "14 NODES",
+    "nodesCount": "17 NODES",
     "badge": "ACTIVE IN N8N",
-    "title": "MULTI-SHEET E-COMMERCE ORDER FULFILLMENT & INVENTORY ROUTER",
+    "title": "MULTI-SHEET ORDER FULFILLMENT & NOTIFICATION ROUTER",
     "img": "images/workflow-order-routing-slack.png",
-    "desc": "Automated order routing and multi-channel fulfillment workflow. Parses incoming e-commerce webhooks, validates inventory across Google Sheets and PostgreSQL, handles backorder splitting, and dispatches customer tracking alerts via WhatsApp and email.",
-    "howItWorks": "This operations engine streamlines multi-channel e-commerce fulfillment across Shopify, WooCommerce, and wholesale B2B portals. When a purchase is completed, real-time webhook listeners capture order line-items, verify stock across Google Sheets and PostgreSQL databases, and route items to appropriate regional warehouses. The workflow automatically generates shipping labels and tracking numbers via EasyPost API, creates branded PDF invoices in Google Drive, and alerts customers via WhatsApp and SendGrid email notifications, keeping inventory counts and order records accurate across all channels."
+    "desc": "Automated order reconciliation and fulfillment router. Concurrently pulls transactional data from multiple Google Sheets (sheet1 & sheet2), merges datasets on matching keys, cleanses fields, and routes through a 4-way rule-based Switch (Pending, Processing, Refunded, Cancelled) with automated deduplication, batch aggregation, and targeted email & Slack notification alerts.",
+    "howItWorks": "Automated order reconciliation and fulfillment router. Concurrently pulls transactional data from multiple Google Sheets (sheet1 & sheet2), merges datasets on matching keys, cleanses fields, and routes through a 4-way rule-based Switch (Pending, Processing, Refunded, Cancelled) with automated deduplication, batch aggregation, and targeted email & Slack notification alerts.",
+    "problemSolved": "Eliminates fulfillment bottlenecks, missed shipments, and data errors across disconnected spreadsheets. Automatically reconciles records from multiple Google Sheets, manages status-based routing, and triggers real-time Slack/email fulfillment alerts."
   }
 ];
 
@@ -1209,6 +1215,10 @@
 
     if (modalWorkflowExplainer) {
       modalWorkflowExplainer.textContent = data.howItWorks;
+    }
+    const modalWorkflowProblem = document.getElementById('modal-workflow-problem');
+    if (modalWorkflowProblem) {
+      modalWorkflowProblem.textContent = data.problemSolved || '';
     }
 
     if (modalPz) {

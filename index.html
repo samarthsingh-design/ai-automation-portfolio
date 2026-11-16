@@ -25,7 +25,7 @@
   <link rel="icon" type="image/svg+xml" href="images/logo.svg">
   <link rel="icon" type="image/png" href="images/logo.png">
   <link rel="apple-touch-icon" href="images/logo.png">
-  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="style.css?v=22">
   <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
 </head>
 
@@ -300,6 +300,10 @@
                     generates HTML drafts, and pushes interactive Approve/Disapprove buttons directly into Slack /
                     Telegram. Once approved, it executes the Gmail REST API to dispatch the message.
                   </p>
+                  <div class="project-problem-box">
+                    <span class="problem-label">// WHAT PROBLEM DOES IT SOLVE?</span>
+                    <p class="problem-text">Eliminates hours of manual inbox triage and delayed customer replies. The AI agent categorizes urgency and pre-drafts contextual replies, giving team members 1-click Slack/Telegram approval control without having to write emails from scratch.</p>
+                  </div>
                   <div class="tech-tags">
                     <span class="tech-tag">n8n (16 Nodes)</span>
                     <!-- <span class="tech-tag">LangChain AI Agent</span> -->
@@ -377,6 +381,10 @@
                     Gemini with Structured Output. Routes into 4 tiers (HOT 🔥, WARM 🌤️, COLD
                     ❄️, UNKNOWN ❓), logs formatted records to Google Sheets, and alerts Slack.
                   </p>
+                  <div class="project-problem-box">
+                    <span class="problem-label">// WHAT PROBLEM DOES IT SOLVE?</span>
+                    <p class="problem-text">Stops high-value inbound leads from going cold. Eliminates manual prospect research by scraping company domains, scoring ICP fit with Gemini AI in seconds, and routing hot deals straight to sales reps before competitors reply.</p>
+                  </div>
                   <div class="tech-tags">
                     <span class="tech-tag">n8n (18 Nodes)</span>
                     <span class="tech-tag">Webhook Ingestion</span>
@@ -455,6 +463,10 @@
                     to automatically update CRM status, or executes a multi-stage personalized
                     HTML drip sequence (UX Audit, Case Study, Break-up Email) while updating Google Sheets timestamps.
                   </p>
+                  <div class="project-problem-box">
+                    <span class="problem-label">// WHAT PROBLEM DOES IT SOLVE?</span>
+                    <p class="problem-text">Solves tedious follow-up management and awkward reply overlap. Automatically runs personalized multi-touch drip campaigns and monitors inboxes for replies—instantly halting outreach the moment a prospect responds.</p>
+                  </div>
                   <div class="tech-tags">
                     <span class="tech-tag">n8n (14 Nodes)</span>
                     <!-- <span class="tech-tag">Cron Schedule</span> -->
@@ -533,6 +545,10 @@
                     receives user queries and leverages an AI Agent with Pinecone retrieval tool for hallucination-free
                     support answers.
                   </p>
+                  <div class="project-problem-box">
+                    <span class="problem-label">// WHAT PROBLEM DOES IT SOLVE?</span>
+                    <p class="problem-text">Prevents customer support teams from drowning in repetitive tickets and outdated documentation. Automatically indexes private company Google Drive docs into Pinecone and serves instant, source-verified 24/7 AI answers with zero hallucination.</p>
+                  </div>
                   <div class="tech-tags">
                     <span class="tech-tag">n8n (11 Nodes)</span>
                     <span class="tech-tag">Pinecone Vector Store</span>
@@ -610,6 +626,10 @@
                     ranks top stories using custom JavaScript, generates high-engagement short-form video hooks &amp;
                     scripts via OpenRouter AI Model, and saves structured content boards directly to Notion.
                   </p>
+                  <div class="project-problem-box">
+                    <span class="problem-label">// WHAT PROBLEM DOES IT SOLVE?</span>
+                    <p class="problem-text">Removes 10+ weekly hours spent manually scouring tech publications and brainstorming video concepts. Aggregates and ranks the top stories across 5 tech feeds, generates viral short-form video scripts, and organizes ready-to-record boards in Notion.</p>
+                  </div>
                   <div class="tech-tags">
                     <span class="tech-tag">n8n (15 Nodes)</span>
                     <span class="tech-tag">5x RSS Feeds</span>
@@ -687,6 +707,10 @@
                     routes through a 4-way rule-based Switch (Pending, Processing, Refunded, Cancelled) with automated
                     deduplication, batch aggregation, and targeted email &amp; Slack notification alerts.
                   </p>
+                  <div class="project-problem-box">
+                    <span class="problem-label">// WHAT PROBLEM DOES IT SOLVE?</span>
+                    <p class="problem-text">Eliminates fulfillment bottlenecks, missed shipments, and data errors across disconnected spreadsheets. Automatically reconciles records from multiple Google Sheets, manages status-based routing, and triggers real-time Slack/email fulfillment alerts.</p>
+                  </div>
                   <div class="tech-tags">
                     <span class="tech-tag">n8n (17 Nodes)</span>
                     <span class="tech-tag">Multi-Sheet Merge</span>
@@ -851,8 +875,12 @@
             <div class="sidebar-pane active" id="pane-nodes">
               <h4 class="sidebar-section-title" id="modal-pipeline-title">WORKFLOW OVERVIEW</h4>
               <div class="workflow-explainer-card">
-                <span class="explainer-badge">// OPERATIONAL MECHANICS</span>
+                <span class="explainer-badge">// SYSTEM ARCHITECTURE</span>
                 <p class="workflow-explainer-text" id="modal-workflow-explainer"></p>
+              </div>
+              <div class="workflow-problem-card">
+                <span class="explainer-badge explainer-badge-problem">// WHAT PROBLEM DOES IT SOLVE?</span>
+                <p class="workflow-problem-text" id="modal-workflow-problem"></p>
               </div>
             </div>
           </div>
@@ -861,7 +889,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=18"></script>
+  <script src="app.js?v=19"></script>
 </body>
 
 </html>
